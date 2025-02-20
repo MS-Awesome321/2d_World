@@ -1,23 +1,3 @@
----
-jupyter:
-  kernelspec:
-    display_name: 2d_World
-    language: python
-    name: python3
-  language_info:
-    codemirror_mode:
-      name: ipython
-      version: 3
-    file_extension: .py
-    mimetype: text/x-python
-    name: python
-    nbconvert_exporter: python
-    pygments_lexer: ipython3
-    version: 3.12.8
-  nbformat: 4
-  nbformat_minor: 2
----
-
 ::: {.cell .code execution_count="8"}
 ``` python
 from segmenter import Segmenter
@@ -38,7 +18,7 @@ test_wte2_PIL
 ```
 
 ::: {.output .execute_result execution_count="23"}
-![](vertopal_57756a3b6d594cd5ae404025e2b3c632/6da5e599123665034eeeff5464a4aeb43da9b106.jpg)
+![](readmeImages/1.jpg)
 :::
 :::
 
@@ -102,6 +82,6 @@ plt.imshow(segmenter.colored_masks)
 :::
 
 ::: {.output .display_data}
-![](vertopal_57756a3b6d594cd5ae404025e2b3c632/4cff6bdd9789f7b10ed2bcf51af89874c8f0311a.png)
+![](readmeImages/2.png)
 :::
 :::
