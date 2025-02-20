@@ -1,4 +1,3 @@
-::: {.cell .code execution_count="8"}
 ``` python
 from segmenter import Segmenter
 from material import wte2, graphene
@@ -8,21 +7,16 @@ from tqdm import tqdm
 from PIL import Image
 import matplotlib.pyplot as plt
 ```
-:::
 
-::: {.cell .code execution_count="23"}
 ``` python
 test_wte2_PIL = Image.open('test_images/wte2_28.jpg')
 test_wte2 = np.array(test_wte2_PIL)
 test_wte2_PIL
 ```
 
-::: {.output .execute_result execution_count="23"}
 ![](readmeImages/1.jpg)
-:::
-:::
 
-::: {.cell .code}
+
 ``` python
 # Dictionaries telling the Segmenter how to color image after labelling
 
@@ -55,9 +49,7 @@ number_by_layer = {
     'dirt': 3,
 }
 ```
-:::
 
-::: {.cell .code execution_count="32"}
 ``` python
 segmenter = Segmenter(test_wte2,
                         material=wte2,
@@ -69,19 +61,15 @@ segmenter = Segmenter(test_wte2,
 segmenter.shift_multiplier = 96
 segmenter.go()
 ```
-:::
 
-::: {.cell .code execution_count="33"}
 ``` python
 segmenter.prettify()
 plt.imshow(segmenter.colored_masks)
 ```
 
-::: {.output .execute_result execution_count="33"}
-    <matplotlib.image.AxesImage at 0x177ef7a70>
-:::
 
-::: {.output .display_data}
+<matplotlib.image.AxesImage at 0x177ef7a70>
+
+
+
 ![](readmeImages/2.png)
-:::
-:::
