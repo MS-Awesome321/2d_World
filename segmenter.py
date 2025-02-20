@@ -37,7 +37,7 @@ class Segmenter():
     self.tolerance = 0
     self.sigma = material.recommended_sigma
     self.fat_threshold = material.recommended_fat_threshold
-    self.shift_multiplier = 48 #for images take through circular lens
+    self.shift_multiplier = 48 #for images taken through circular lens
     self.masks = []
     self.mask_labels = {}
     self.mask_areas = []
@@ -98,13 +98,13 @@ class Segmenter():
     else:
       raise ValueError("Invalid Mode: "+mode)
 
-    shift_factor = self.sigma * self.shift_multiplier * (self.img.shape[1]//840)
-    temp_black = np.logical_or(shift(self.black_zone.astype('int8'), (0,shift_factor)), shift(self.black_zone.astype('int8'), (0,-shift_factor)))
+    shift_factor = self.sigma * self.shift_multiplier * (self.img.shape[1]/840)
+    temp_black = np.logical_or(shift(self.black_zone.astype('float32'), (0,shift_factor)), shift(self.black_zone.astype('float32'), (0,-shift_factor)))
     self.black_zone = np.logical_or(self.black_zone, temp_black)
 
     edges[self.black_zone] = 0
     self.edges = edges.astype('float32')
-    self.black_edges = sobel(self.black_zone.astype('int8')).astype('bool')
+    self.black_edges = sobel(self.black_zone.astype('float32')).astype('bool')
     self.edges = np.logical_or(self.edges, self.black_edges).astype('float32')
 
     fat_edges = gaussian_filter(self.edges, sigma=self.sigma)

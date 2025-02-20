@@ -1,3 +1,5 @@
+# Using Segmenter
+
 ``` python
 from segmenter import Segmenter
 from material import wte2, graphene
@@ -9,22 +11,12 @@ import matplotlib.pyplot as plt
 ```
 
 ``` python
-test_wte2_PIL = Image.open('test_images/wte2_28.jpg')
-test_wte2 = np.array(test_wte2_PIL)
-test_wte2_PIL
-```
-
-![](readmeImages/1.jpg)
-
-
-``` python
 # Dictionaries telling the Segmenter how to color image after labelling
 
 colors_by_layer = {
     'monolayer': np.array([0,163,255])/255.0, # Blue
     'bilayer': np.array([29,255,0])/255.0, # Green
-    # 'trilayer': np.array([198,22,22])/255.0, # Red
-    'trilayer': np.array([255,165,0])/255.0, # Orange
+    'trilayer': np.array([198,22,22])/255.0, # Red
     'fewlayer': np.array([255,165,0])/255.0, # Orange
     'manylayer': np.array([255,165,0])/255.0, # Orange
     'bluish_layers': np.array([255,165,0])/255.0, # Orange
@@ -50,6 +42,17 @@ number_by_layer = {
 }
 ```
 
+## WTe2
+
+``` python
+test_wte2_PIL = Image.open('test_images/wte2_28.jpg')
+test_wte2 = np.array(test_wte2_PIL)
+test_wte2_PIL
+```
+
+![](vertopal_8221410835314baa8dd3b841091fa638/6da5e599123665034eeeff5464a4aeb43da9b106.jpg)
+
+
 ``` python
 segmenter = Segmenter(test_wte2,
                         material=wte2,
@@ -58,7 +61,7 @@ segmenter = Segmenter(test_wte2,
                         magnification=100,
                         mask_numbers=number_by_layer
                     )
-segmenter.shift_multiplier = 96
+
 segmenter.go()
 ```
 
@@ -67,9 +70,35 @@ segmenter.prettify()
 plt.imshow(segmenter.colored_masks)
 ```
 
+![](vertopal_8221410835314baa8dd3b841091fa638/6f5a27e9ab444341efa4fa34174e2eb2678d87e5.png)
 
-<matplotlib.image.AxesImage at 0x177ef7a70>
+## Graphene
 
+``` python
+test_graphene_PIL = Image.open('test_images/graphene.jpg')
+test_graphene = np.array(test_graphene_PIL)
+test_graphene_PIL
+```
 
+![](vertopal_8221410835314baa8dd3b841091fa638/a185e9ce37515872897251d1d9b9016cd623b97b.jpg)
 
-![](readmeImages/2.png)
+``` python
+segmenter = Segmenter(test_graphene,
+                        material=graphene,
+                        size = test_graphene.shape[:2],
+                        mask_colors=colors_by_layer,
+                        magnification=100,
+                        mask_numbers=number_by_layer
+                    )
+
+segmenter.shift_multiplier = 0
+segmenter.max_area = 100000
+segmenter.go()
+```
+
+``` python
+segmenter.prettify()
+plt.imshow(segmenter.colored_masks)
+```
+
+![](vertopal_8221410835314baa8dd3b841091fa638/76a447a30b4b4b0b17d28b17a37768300d1f63d8.png)
