@@ -102,3 +102,14 @@ plt.imshow(segmenter.colored_masks)
 ```
 
 ![](vertopal_8221410835314baa8dd3b841091fa638/76a447a30b4b4b0b17d28b17a37768300d1f63d8.png)
+
+### Convert to Training Data for a Neural Network
+
+```python
+segmenter.number()
+plt.imshow(segmenter.numbered_masks)
+plt.colorbar()
+plt.show()
+```
+
+![](vertopal_8221410835314baa8dd3b841091fa638/ai_input.png)
