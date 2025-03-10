@@ -22,6 +22,10 @@ graphene_ds = datasets.load_dataset('../../../../Volumes/One_Touch/2D_World/Grap
 graphene_ds = graphene_ds['train'].map(standardize)
 graphene_iter = iter(graphene_ds)
 
+mono_graphene_ds = datasets.load_dataset('../../../../Volumes/One_Touch/2D_World/monolayer_Graphene', streaming=True)
+mono_graphene_ds = mono_graphene_ds['train'].map(standardize)
+mono_graphene_iter = iter(mono_graphene_ds)
+
 hBN_ds = datasets.load_dataset('../../../../Volumes/One_Touch/2D_World/hBN_M100', streaming=True)
 hBN_ds = hBN_ds['train'].map(standardize)
 hBN_iter = iter(hBN_ds)

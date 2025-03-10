@@ -1,6 +1,5 @@
-from skimage.transform import resize, downscale_local_mean
 from skimage.morphology import area_closing, binary_closing, closing, label
-from skimage.color import lab2rgb, rgb2gray, rgb2lab
+from skimage.color import lab2rgb, rgb2gray, rgb2yuv, rgb2lab
 from skimage.segmentation import flood_fill
 from scipy.ndimage import gaussian_filter, shift, binary_erosion, distance_transform_edt, binary_fill_holes
 from skimage.filters import sobel, farid, scharr, prewitt, gabor, roberts
@@ -9,9 +8,10 @@ from skimage.segmentation import watershed
 from skimage.exposure import adjust_gamma
 from tqdm import tqdm
 from copy import deepcopy
-from material import Material, wte2
 import numpy.ma as ma
 import numpy as np
+from material import wte2
+
 
 class Segmenter():
   def __init__(self, img, material=wte2, size = (560, 840), magnification = None, mask_colors = {}, mask_numbers = {}):
@@ -29,19 +29,15 @@ class Segmenter():
 
     self.mask_colors = mask_colors
     self.mask_numbers = mask_numbers
-    self.l_separation_factor = material.recommended_l_factor
-    self.l_midpoint = material.recommended_l_midpoint
     self.img = img
-    self.canny_sigma = material.recommended_canny_sigma
     self.num_segments = 0
     self.tolerance = 0
     self.sigma = material.recommended_sigma
     self.fat_threshold = material.recommended_fat_threshold
-    self.shift_multiplier = 48 #for images taken through circular lens
+    self.shift_multiplier = 48 #for images take through circular lens
     self.masks = []
     self.mask_labels = {}
     self.mask_areas = []
-    self.edge_mode = material.recommended_edge_mode
     self.max_area = 15000
     self.min_area = 5
     self.interest_lightness_range = 15
@@ -51,16 +47,20 @@ class Segmenter():
 
     self.target_lab = deepcopy(material.target_bg_lab)
     self.layer_labels = deepcopy(material.layer_labels)
+    self.edge_method = material.edge_method
 
   def adjust_layer_labels(self):
     self.avg_bg_lab = self.get_lab(self.bg_mask_id)
 
     adjustment_factor = self.avg_bg_lab - np.array(self.target_lab)
+    new_layer_labels = {}
     for key, value in self.layer_labels.items():
-      new_value = value + adjustment_factor
-      self.layer_labels[key] = new_value
+      new_key = tuple(key + adjustment_factor)
+      new_layer_labels[new_key] = value
+    
+    self.layer_labels = new_layer_labels
     # Add bg lab
-    self.layer_labels['bg'] = self.avg_bg_lab
+    self.layer_labels[tuple(self.avg_bg_lab)] = 'bg'
 
   def set_magnification(self, mag, max_area=1600, min_area = 1, units='um'):
     self.magnification = mag
@@ -75,36 +75,16 @@ class Segmenter():
 
     return self.max_area, self.min_area
 
-  def l_separate(self, factor, midpoint=50):
-    lab = rgb2lab(self.img)
-    lab[:,:,0] = lab[:,:,0] + factor*(lab[:,:,0] - midpoint*np.ones_like(lab[:,:,0]))
-    over = lab[:,:,0] > 100
-    under = lab[:,:,0] < 0
-    lab[:,:,0][over] = 100
-    lab[:,:,0][under] = 0
-    self.l_separated = lab2rgb(lab)
-    return self.l_separated
-
-  def get_edges(self, mode='normal', factor = 0, midpoint=0):
-    if mode == 'normal':
-      edges = canny(rgb2gray(self.img), sigma=self.canny_sigma).astype('float32')
-    elif mode == 'sensitive':
-      if factor==0:
-        factor = self.l_separation_factor
-      if midpoint==0:
-        midpoint = self.l_midpoint
-      self.l_separate(factor, midpoint)
-      edges = canny(rgb2gray(self.l_separated), sigma=self.canny_sigma).astype('float32')
-    else:
-      raise ValueError("Invalid Mode: "+mode)
+  def get_edges(self):
+    edges = self.edge_method(self.img)
 
     shift_factor = self.sigma * self.shift_multiplier * (self.img.shape[1]/840)
-    temp_black = np.logical_or(shift(self.black_zone.astype('float32'), (0,shift_factor)), shift(self.black_zone.astype('float32'), (0,-shift_factor)))
+    temp_black = np.logical_or(shift(self.black_zone.astype('int8'), (0,shift_factor)), shift(self.black_zone.astype('int8'), (0,-shift_factor)))
     self.black_zone = np.logical_or(self.black_zone, temp_black)
 
     edges[self.black_zone] = 0
     self.edges = edges.astype('float32')
-    self.black_edges = sobel(self.black_zone.astype('float32')).astype('bool')
+    self.black_edges = sobel(self.black_zone.astype('int8')).astype('bool')
     self.edges = np.logical_or(self.edges, self.black_edges).astype('float32')
 
     fat_edges = gaussian_filter(self.edges, sigma=self.sigma)
@@ -183,7 +163,7 @@ class Segmenter():
             min_dist = dist
             min_id = bg_mask_id
           self.mask_areas[bg_mask_id] *= -1
-            
+
         self.bg_mask_id = min_id
         self.bg_mask = self.masks == self.bg_mask_id
 
@@ -236,9 +216,9 @@ class Segmenter():
       if self.mask_areas[i] < self.min_area:
         self.mask_labels[i] = 'dirt'
       else:
-        for layer_type, base_lab in self.layer_labels.items():
+        for base_lab, layer_type in self.layer_labels.items():
           if mode=='full_lab':
-            distance = np.linalg.norm(lab - base_lab)
+            distance = np.linalg.norm(lab - np.array(base_lab))
           elif mode=='lightness':
             distance = np.linalg.norm(lab[0] - base_lab[0])
           else:
@@ -248,11 +228,9 @@ class Segmenter():
             label = layer_type
         self.mask_labels[i] = label
 
-  def go(self, mask_mode='advanced', label_mode='full_lab', edge_mode='', bg_mode='normal'):
-    if edge_mode=='':
-      edge_mode = self.edge_mode
+  def go(self, mask_mode='advanced', label_mode='full_lab', bg_mode='normal'):
     self.get_black_zone()
-    self.get_edges(mode=edge_mode)
+    self.get_edges()
     self.make_masks(mode=mask_mode, bg_mode=bg_mode)
     self.make_labels(mode=label_mode)
 
@@ -274,7 +252,7 @@ class Segmenter():
 
     self.colored_masks = np.stack([r,g,b], axis=-1)
     return self.colored_masks
-  
+
   def number(self):
     result = np.zeros((self.size[0], self.size[1]))
     for i in self.mask_ids:
