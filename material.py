@@ -1,6 +1,7 @@
 from skimage.feature import canny
 from skimage.color import lab2rgb, rgb2gray, rgb2lab
 import numpy as np
+import matplotlib.pyplot as plt
 
 class EdgeMethod():
   def __init__(self, canny_sigma = 0.7):
@@ -9,7 +10,7 @@ class EdgeMethod():
   def __call__(self, img):
     return canny(rgb2gray(img), sigma=self.canny_sigma).astype('float32')
 
-def lab_separate(img, l_factor, l_midpoint=50, a_factor = 1, a_midpoint=50, b_factor = 1, b_midpoint = 50):
+def lab_separate(img, l_factor = 1, l_midpoint=50, a_factor = 1, a_midpoint=50, b_factor = 1, b_midpoint = 50):
     lab = rgb2lab(img)
     lab[:,:,0] = lab[:,:,0] + l_factor*(lab[:,:,0] - l_midpoint*np.ones_like(lab[:,:,0]))
     lab[:,:,1] = lab[:,:,1] + a_factor*(lab[:,:,1] - a_midpoint*np.ones_like(lab[:,:,1]))

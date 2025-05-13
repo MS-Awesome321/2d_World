@@ -1,9 +1,13 @@
-from data import wte2_iter, graphene_iter, hBN_iter, mono_graphene_iter
+from data import mono_graphene_iter
 from segmenter import Segmenter
 from material import Material, wte2, graphene
 import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
+import warnings
+import matplotlib.pyplot as plt
+
+warnings.simplefilter("ignore", UserWarning)
 
 colors_by_layer = {
     'monolayer': np.array([0,163,255])/255.0, # Blue
@@ -12,10 +16,9 @@ colors_by_layer = {
     'trilayer': np.array([255,165,0])/255.0, # Orange
     'fewlayer': np.array([255,165,0])/255.0, # Orange
     'manylayer': np.array([255,165,0])/255.0, # Orange
-    'bluish_layers': np.array([255,165,0])/255.0, # Orange
+    'bluish_layers': np.array([255, 255, 0])/255.0, # Yellow
     'bulk': np.array([152,7,235])/255.0, # Purple
     'dirt': np.array([255, 255, 0])/255.0, # Yellow
-    'more_bluish_layers': np.array([255, 255, 0])/255.0, # Yellow
     'bg': np.array([0, 0, 0])/255.0, # Uncolored
 }
 
@@ -62,7 +65,7 @@ hBN_numbers = { # cielab colorspace
 i = 0
 for image in tqdm(mono_graphene_iter):
     i+=1
-    if i > 200:
+    if i > 400:
         break
 
     try:
@@ -72,16 +75,19 @@ for image in tqdm(mono_graphene_iter):
                         mask_colors=colors_by_layer,
                         magnification=100,
                         mask_numbers=number_by_layer
-                        )
+                    )
+
         segmenter.shift_multiplier = 0
         segmenter.max_area = 100000
-        segmenter.go(
-            # bg_mode='assume'
-        )
+        segmenter.go()
         pretty = segmenter.prettify()
         numbered = segmenter.number()
-        tf.keras.utils.save_img('../../../../Volumes/One_Touch/2D_World/monolayer_Graphene_Labeled/Inputs/'+str(i)+'.jpg', image['image'])
-        tf.keras.utils.save_img('../../../../Volumes/One_Touch/2D_World/monolayer_Graphene_Labeled/Colored_Masks/'+str(i)+'.jpg', pretty)
-        tf.keras.utils.save_img('../../../../Volumes/One_Touch/2D_World/monolayer_Graphene_Labeled/AI_Inputs/'+str(i)+'.jpg', tf.expand_dims(numbered, axis=-1))
+        # tf.keras.utils.save_img('../../../../Volumes/One_Touch/2D_World/monolayer_Graphene_Labeled/Inputs/'+str(i)+'.jpg', image['image'])
+        # tf.keras.utils.save_img('../../../../Volumes/One_Touch/2D_World/monolayer_Graphene_Labeled/Colored_Masks/'+str(i)+'.jpg', pretty)
+        # tf.keras.utils.save_img('../../../../Volumes/One_Touch/2D_World/monolayer_Graphene_Labeled/AI_Inputs/'+str(i)+'.jpg', tf.expand_dims(numbered, axis=-1))
+
+        tf.keras.utils.save_img('../monolayerGraphene/monolayer_Graphene_Labeled/Inputs/'+str(i)+'.jpg', image['image'])
+        tf.keras.utils.save_img('../monolayerGraphene/monolayer_Graphene_Labeled/Colored_Masks/'+str(i)+'.jpg', pretty)
+        tf.keras.utils.save_img('../monolayerGraphene/monolayer_Graphene_Labeled/AI_Inputs/'+str(i)+'.jpg', tf.expand_dims(numbered, axis=-1))
     except:
         pass

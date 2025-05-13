@@ -99,12 +99,10 @@ class Segmenter():
       filled_map = area_closing(filled_map, area_threshold = self.min_area)
       filled_map = np.logical_not(filled_map)
 
-      self.masks, self.num_masks = label(filled_map, connectivity=1, return_counts=True)
+      self.masks, self.num_masks = label(filled_map, connectivity=1, return_num=True)
 
       self.mask_ids, mask_areas = np.unique(self.masks, return_counts=True)
       self.mask_areas = {self.mask_ids[i]: mask_areas[i] for i in range(len(self.mask_ids))}
-
-      return filled_map
 
     elif mode=='watershed':
       filled_map = np.logical_not(self.edges)
@@ -119,8 +117,6 @@ class Segmenter():
       self.mask_ids, mask_areas = np.unique(self.masks, return_counts=True)
       self.mask_areas = {self.mask_ids[i]: mask_areas[i] for i in range(len(self.mask_ids))}
       self.num_masks = len(self.mask_ids)
-
-      return filled_map
 
     elif mode=='advanced':
       filled_map = np.logical_not(self.edges)
@@ -148,34 +144,37 @@ class Segmenter():
       mask_areas = mask_areas[2:]
       self.mask_areas = {self.mask_ids[i]: mask_areas[i] for i in range(len(self.mask_ids))}
 
-      if bg_mode=='normal':
-        self.bg_mask_id = max(self.mask_areas, key=self.mask_areas.get)
-        self.bg_mask = self.masks == self.bg_mask_id
-      elif bg_mode=='assume':
-        min_dist = 100
-        min_id = 0
-        sorted_areas = np.argsort(self.mask_areas.values())
-        for i in range(5):
-          bg_mask_id = max(self.mask_areas, key=self.mask_areas.get)
-          lab = self.get_lab(bg_mask_id)
-          dist = np.linalg.norm(lab - self.target_lab)
-          if dist < min_dist:
-            min_dist = dist
-            min_id = bg_mask_id
-          self.mask_areas[bg_mask_id] *= -1
-
-        self.bg_mask_id = min_id
-        self.bg_mask = self.masks == self.bg_mask_id
-
-        for i in range(5):
-          bg_mask_id = min(self.mask_areas, key=self.mask_areas.get)
-          self.mask_areas[bg_mask_id] *= -1
-      else:
-        raise ValueError("Invalid Mode: "+bg_mode)
-      return filled_map
-
     else:
       raise ValueError("Invalid Mode: "+mode)
+
+    if bg_mode=='normal':
+      self.bg_mask_id = max(self.mask_areas, key=self.mask_areas.get)
+      self.bg_mask = self.masks == self.bg_mask_id
+    elif bg_mode=='assume':
+      min_dist = 100
+      min_id = 0
+      # sorted_areas = np.argsort(self.mask_areas.values())
+      for i in range(5):
+        bg_mask_id = max(self.mask_areas, key=self.mask_areas.get)
+        lab = self.get_lab(bg_mask_id)
+        dist = np.linalg.norm(lab - self.target_lab)
+        if dist < min_dist:
+          min_dist = dist
+          min_id = bg_mask_id
+        self.mask_areas[bg_mask_id] *= -1
+
+      self.bg_mask_id = min_id
+      self.bg_mask = self.masks == self.bg_mask_id
+
+      for i in range(5):
+        bg_mask_id = min(self.mask_areas, key=self.mask_areas.get)
+        self.mask_areas[bg_mask_id] *= -1
+    else:
+      raise ValueError("Invalid Mode: "+bg_mode)
+    
+    return filled_map
+
+    
 
   def get_black_zone(self):
     self.black_zone = self.lab[:,:,0] < 7
