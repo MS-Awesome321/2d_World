@@ -17,12 +17,6 @@ cap = cv2.VideoCapture(0)  # Use 0 for stdin
 # Set the VideoCapture to read from gphoto2's stdout
 cap.open("pipe:0", cv2.CAP_FFMPEG)
 
-font = cv2.FONT_HERSHEY_SIMPLEX
-org = (50, 50)
-fontScale = 1
-color = (255, 0, 0)
-thickness = 2
-
 colors_by_layer = {
     'monolayer': np.array([0,163,255])/255.0, # Blue
     'bilayer': np.array([29,255,0])/255.0, # Green
@@ -56,14 +50,6 @@ while True:
     if not ret:
         print("Error reading frame from stream", file=sys.stderr)
         break
-
-    # Compute Blur Score
-    score = cv2.Laplacian(frame, cv2.CV_32FC1).var()
-    score = -np.log(score)
-
-    # Overlay Text
-    frame = cv2.putText(frame, 'Blur Factor = '+str(score), org, font, 
-                   fontScale, color, thickness, cv2.LINE_AA)
     
     # Initialize Segmenter
     segmenter = Segmenter(frame,
