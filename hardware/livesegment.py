@@ -1,9 +1,8 @@
 import sys
 import cv2
+import os
 import numpy as np
-
-sys.path.append('../2d_World/segmenter.py')
-
+sys.path.append(os.path.abspath('/Users/mayanksengupta/Desktop/2d_World/')) # add path to folder containing segmenter.py
 from segmenter import Segmenter
 from material import wte2, graphene
 
@@ -51,10 +50,14 @@ while True:
         print("Error reading frame from stream", file=sys.stderr)
         break
     
+    # Resize frame and prepare segmenter input
+    frame = cv2.resize(frame, (840, 560))
+    input = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
     # Initialize Segmenter
-    segmenter = Segmenter(frame,
+    segmenter = Segmenter(input,
                         material=wte2,
-                        size = frame.shape[:2],
+                        size = input.shape[:2],
                         mask_colors=colors_by_layer,
                         magnification=100,
                         mask_numbers=number_by_layer
@@ -62,9 +65,12 @@ while True:
 
     # Run Segmenter
     segmenter.go()
+    segmenter.prettify()
+
+    output = cv2.cvtColor((segmenter.colored_masks * 255).astype(np.uint8), cv2.COLOR_RGB2BGR)
 
     # Display the frame
-    shown = np.concatenate((segmenter.prettify(), frame), axis=1)
+    shown = np.concatenate((output, frame), axis=1)
     cv2.imshow('Live Segment Demo', shown)
 
 
