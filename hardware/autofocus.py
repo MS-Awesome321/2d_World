@@ -27,41 +27,41 @@ direction = -1 # down
 threshold = 0.5
 done = False
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        print("Error reading frame from stream", file=sys.stderr)
-        break
+try:
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("Error reading frame from stream", file=sys.stderr)
+            break
 
-    # Compute Blur Score
-    score = cv2.Laplacian(frame, cv2.CV_32FC1).var()
-    score = -np.log(score)
+        # Compute Blur Score
+        score = cv2.Laplacian(frame, cv2.CV_32FC1).var()
+        score = -np.log(score)
 
-    # Overlay Text
-    frame = cv2.putText(frame, 'Blur Factor = '+str(score), org, font, 
-                   fontScale, color, thickness, cv2.LINE_AA)
+        # Overlay Text
+        frame = cv2.putText(frame, 'Blur Factor = '+str(score), org, font, 
+                    fontScale, color, thickness, cv2.LINE_AA)
 
-    # Display the frame
-    cv2.imshow('Autofocus Demo', frame)
+        # Display the frame
+        cv2.imshow('Autofocus Demo', frame)
 
-    if not done:
-        if (time.time() - start > wait_time):
-            start = time.time()
-            if prev_blur_score > score:
-                # Move in same direction
-                rotate_relative(direction * 10 * abs(prev_blur_score - score))
-            else :
-                # Negate direction
-                direction *= -1
-                rotate_relative(direction * 10 * abs(prev_blur_score - score))
-            done = abs(prev_blur_score - score) < threshold
-            if done:
-                print("microscope focused")
-            prev_blur_score = score
+        if not done:
+            if (time.time() - start > wait_time):
+                start = time.time()
+                if prev_blur_score > score:
+                    # Move in same direction
+                    rotate_relative(direction * 10 * abs(prev_blur_score - score))
+                else :
+                    # Negate direction
+                    direction *= -1
+                    rotate_relative(direction * 10 * abs(prev_blur_score - score))
+                done = abs(prev_blur_score - score) < threshold
+                if done:
+                    print("microscope focused")
+                prev_blur_score = score
 
 
-    if cv2.waitKey(1) == ord('q'): # Break on 'q' key press
-        break
-
-cap.release()
-cv2.destroyAllWindows()
+except KeyboardInterrupt:
+    # graceful exit
+    cap.release()
+    cv2.destroyAllWindows()

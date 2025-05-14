@@ -1,8 +1,9 @@
 import sys
 import cv2
 import numpy as np
+from pylablib.devices import Thorlabs
 
-# gphoto2 --capture-movie --stdout | python camera.py
+# gphoto2 --capture-movie --stdout | python autofocus.py
 
 sys.stdin = sys.stdin.buffer
 
@@ -17,6 +18,15 @@ org = (50, 50)
 fontScale = 1
 color = (255, 0, 0)
 thickness = 2
+
+# Initialize motor
+motors = Thorlabs.list_kinesis_devices()
+print(motors)
+z_motor = Thorlabs.KinesisMotor(motors[0])
+
+# Threshold for change in blur score
+threshold = 0.25
+prev_blur_score = None
 
 try:
     while True:
@@ -34,7 +44,18 @@ try:
                     fontScale, color, thickness, cv2.LINE_AA)
 
         # Display the frame
-        cv2.imshow('Blur Factor Demo', frame)
+        cv2.imshow('Autofocus Demo', frame)
+
+        if not done:
+            if not prev_blur_score:
+                prev_blur_score = score
+                z_motor.move_by(50)
+                z_motor._wait_move()
+            else:
+                z_motor.move_by((prev_blur_score - score) * 5)
+                z_motor._wait_move()
+                prev_blur_score = score
+            done = abs(prev_blur_score - score) < threshold
 
 except KeyboardInterrupt:
     # graceful exit
