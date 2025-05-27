@@ -1,7 +1,12 @@
 from skimage.feature import canny
 from skimage.color import lab2rgb, rgb2gray, rgb2lab
+from skimage.filters.rank import entropy
+from scipy.ndimage import gaussian_filter, gaussian_gradient_magnitude
+from skimage.morphology import disk
 import numpy as np
 import matplotlib.pyplot as plt
+import cv2
+import concurrent.futures
 
 class EdgeMethod():
   def __init__(self, canny_sigma = 0.7):
@@ -31,6 +36,96 @@ class GrapheneEdgeMethod(EdgeMethod):
     combined = np.logical_or(e1_5, e2total)
     combined = np.logical_or(combined, e1)
     return combined
+  
+
+def subdivide(image, n):
+    """
+    Splits the input image into n^2 (as equal as possible) subsections,
+    even if h or w is not divisible by n.
+
+    Args:
+        image (np.ndarray): Input image (2D or 3D array).
+        n (int): Number of subdivisions per axis.
+
+    Returns:
+        list: A list of n^2 image subsections (as numpy arrays).
+    """
+    h, w = image.shape[:2]
+    h_indices = [round(i * h / n) for i in range(n + 1)]
+    w_indices = [round(i * w / n) for i in range(n + 1)]
+    sections = []
+    for i in range(n):
+        for j in range(n):
+            section = image[h_indices[i]:h_indices[i+1], w_indices[j]:w_indices[j+1]]
+            sections.append(section)
+    return sections
+
+def combine_sections(sections, n, original_shape=None):
+    """
+    Combines a list of n^2 image subsections into the original image,
+    even if h or w is not divisible by n.
+
+    Args:
+        sections (list): List of n^2 numpy arrays (subsections).
+        n (int): Number of subdivisions per axis.
+        original_shape (tuple, optional): The original image shape (h, w) or (h, w, c).
+                                          If not provided, it will be inferred.
+
+    Returns:
+        np.ndarray: The reconstructed image.
+    """
+    # Infer original shape if not provided
+    if original_shape is None:
+        # Estimate shape from sections and n
+        h_total = sum([sections[i * n].shape[0] for i in range(n)])
+        w_total = sum([sections[i].shape[1] for i in range(n)])
+        if sections[0].ndim == 3:
+            c = sections[0].shape[2]
+            image = np.zeros((h_total, w_total, c), dtype=sections[0].dtype)
+        else:
+            image = np.zeros((h_total, w_total), dtype=sections[0].dtype)
+    else:
+        image = np.zeros(original_shape, dtype=sections[0].dtype)
+
+    h_offsets = [0]
+    w_offsets = [0]
+    # Calculate offsets for rows
+    for i in range(n):
+        h_offsets.append(h_offsets[-1] + sections[i * n].shape[0])
+    # Calculate offsets for columns
+    for j in range(n):
+        w_offsets.append(w_offsets[-1] + sections[j].shape[1])
+
+    idx = 0
+    for i in range(n):
+        for j in range(n):
+            h0, h1 = h_offsets[i], h_offsets[i+1]
+            w0, w1 = w_offsets[j], w_offsets[j+1]
+            image[h0:h1, w0:w1] = sections[idx]
+            idx += 1
+    return image
+
+class EntropyEdgeMethod(EdgeMethod):
+  def __init__(self, k=3):
+    self.k = k
+
+  def __call__(self, img):
+    '''
+    Input 2K or 4K resolution images for best results.
+    '''
+
+    input = rgb2gray(img)
+    sections = subdivide(input, self.k)
+    footprint = disk(15)
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+      futures = [executor.submit(entropy, section, footprint) for section in sections]
+      entropied_sections = [f.result() for f in futures]
+
+    entropied = combine_sections(entropied_sections, self.k)
+    entropied = (entropied/np.max(entropied))
+    entropied = np.pow(entropied, 2.5)
+    return entropied > 0.08
 
 class Material():
   def __init__(self, name, target_bg_lab, layer_labels, sigma=0.7, fat_threshold=0.1, edge_method = EdgeMethod()):
@@ -79,7 +174,7 @@ graphene = Material(
     layer_labels=graphene_labels,
     sigma=3,
     fat_threshold=0.005,
-    edge_method = GrapheneEdgeMethod()
+    edge_method = EntropyEdgeMethod(k=3),
   )
 
 
@@ -101,5 +196,5 @@ hBN = Material(
     layer_labels=hBN_labels, 
     sigma=0.7, 
     fat_threshold=0.1,
-    edge_method=GrapheneEdgeMethod(),
+    edge_method=EntropyEdgeMethod(3),
   )

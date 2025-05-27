@@ -60,6 +60,8 @@ try:
                     print("microscope focused")
                 prev_blur_score = score
 
+         # NEVER REMOVE
+        cv2.waitKey(1)
 
 except KeyboardInterrupt:
     # graceful exit

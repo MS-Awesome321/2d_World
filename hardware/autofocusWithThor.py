@@ -56,6 +56,9 @@ try:
                 z_motor._wait_move()
                 prev_blur_score = score
             done = abs(prev_blur_score - score) < threshold
+        
+         # NEVER REMOVE
+        cv2.waitKey(1)
 
 except KeyboardInterrupt:
     # graceful exit

@@ -18,12 +18,18 @@ fontScale = 1
 color = (255, 0, 0)
 thickness = 2
 
+def crop(input):
+    return input[50:880, 200:1440]
+
 try:
     while True:
         ret, frame = cap.read()
         if not ret:
             print("Error reading frame from stream", file=sys.stderr)
             break
+
+        # Crop Frame
+        # frame = crop(frame)
 
         # Compute Blur Score
         score = cv2.Laplacian(frame, cv2.CV_32FC1).var()
@@ -36,7 +42,11 @@ try:
         # Display the frame
         cv2.imshow('Blur Factor Demo', frame)
 
+        # NEVER REMOVE
+        cv2.waitKey(1)
+
 except KeyboardInterrupt:
     # graceful exit
-    cap.release()
-    cv2.destroyAllWindows()
+    pass
+cap.release()
+cv2.destroyAllWindows()

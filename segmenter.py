@@ -26,7 +26,6 @@ class Segmenter():
     if type(magnification) != type(None):
       self.set_magnification(magnification)
 
-
     self.mask_colors = mask_colors
     self.mask_numbers = mask_numbers
     self.img = img
@@ -44,6 +43,7 @@ class Segmenter():
     self.lab = rgb2lab(self.img)
     self.gamma = 0.5
     self.gain = 1
+    
 
     self.target_lab = deepcopy(material.target_bg_lab)
     self.layer_labels = deepcopy(material.layer_labels)
@@ -76,27 +76,29 @@ class Segmenter():
     return self.max_area, self.min_area
 
   def get_edges(self):
-    edges = self.edge_method(self.img)
+    if self.shift_multiplier > 0:
+      self.get_black_zone()
+      edges = self.edge_method(self.img)
+      shift_factor = self.sigma * self.shift_multiplier * (self.img.shape[1]/840)
+      temp_black = np.logical_or(shift(self.black_zone.astype('int8'), (0,shift_factor)), shift(self.black_zone.astype('int8'), (0,-shift_factor)))
+      self.black_zone = np.logical_or(self.black_zone, temp_black)
 
-    shift_factor = self.sigma * self.shift_multiplier * (self.img.shape[1]/840)
-    temp_black = np.logical_or(shift(self.black_zone.astype('int8'), (0,shift_factor)), shift(self.black_zone.astype('int8'), (0,-shift_factor)))
-    self.black_zone = np.logical_or(self.black_zone, temp_black)
+      edges[self.black_zone] = 0
+      self.edges = edges.astype('float32')
+      self.black_edges = sobel(self.black_zone.astype('int8')).astype('bool')
+      self.edges = np.logical_or(self.edges, self.black_edges).astype('float32')
 
-    edges[self.black_zone] = 0
-    self.edges = edges.astype('float32')
-    self.black_edges = sobel(self.black_zone.astype('int8')).astype('bool')
-    self.edges = np.logical_or(self.edges, self.black_edges).astype('float32')
-
-    fat_edges = gaussian_filter(self.edges, sigma=self.sigma)
-    self.fat_edges = fat_edges > self.sigma*self.fat_threshold
+      fat_edges = gaussian_filter(self.edges, sigma=self.sigma)
+      self.fat_edges = fat_edges > self.sigma*self.fat_threshold
+    else:
+      self.edges = self.edge_method(self.img)
+      self.fat_edges = None
 
     return self.edges, self.fat_edges
 
   def make_masks(self, mode='advanced', bg_mode='normal'):
     if mode=='simple':
       filled_map = self.edges
-      filled_map = filled_map.astype('float32')
-      filled_map = area_closing(filled_map, area_threshold = self.min_area)
       filled_map = np.logical_not(filled_map)
 
       self.masks, self.num_masks = label(filled_map, connectivity=1, return_num=True)
@@ -228,7 +230,6 @@ class Segmenter():
         self.mask_labels[i] = label
 
   def go(self, mask_mode='advanced', label_mode='full_lab', bg_mode='normal'):
-    self.get_black_zone()
     self.get_edges()
     self.make_masks(mode=mask_mode, bg_mode=bg_mode)
     self.make_labels(mode=label_mode)
@@ -266,3 +267,4 @@ class Segmenter():
 
     self.numbered_masks = result
     return result
+  
