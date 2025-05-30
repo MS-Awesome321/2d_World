@@ -50,8 +50,8 @@ def rgb_lab_correct(img, current_avg_lab, target_avg_lab=[55.96122403, 28.281086
 # plt.imshow(GrapheneEdgeMethod()(g1_from_iter))
 # plt.show()
 
-image_path = os.listdir("../monolayerGraphene/monolayer_Graphene/")[int(sys.argv[1])]
-g1 = cv2.imread(f'../monolayerGraphene/monolayer_Graphene/{image_path}')
+# image_path = os.listdir("../monolayerGraphene/monolayer_Graphene/")[int(sys.argv[1])]
+g1 = cv2.imread(f'../monolayerGraphene/monolayer_Graphene/{sys.argv[1]}')
 g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
 
 def sobel_advanced(img):

@@ -106,8 +106,10 @@ def combine_sections(sections, n, original_shape=None):
     return image
 
 class EntropyEdgeMethod(EdgeMethod):
-  def __init__(self, k=3):
+  def __init__(self, k=3, magnification=20):
     self.k = k
+    self.mag = magnification
+    
 
   def __call__(self, img):
     '''
@@ -116,7 +118,14 @@ class EntropyEdgeMethod(EdgeMethod):
 
     input = rgb2gray(img)
     sections = subdivide(input, self.k)
-    footprint = disk(15)
+    if self.mag <= 10:
+       disk_radius = 4
+       percentile_threshold = 85
+    else:
+       disk_radius = 15
+       percentile_threshold = 75
+
+    footprint = disk(disk_radius)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
       futures = [executor.submit(entropy, section, footprint) for section in sections]
@@ -125,16 +134,18 @@ class EntropyEdgeMethod(EdgeMethod):
     entropied = combine_sections(entropied_sections, self.k)
     entropied = (entropied/np.max(entropied))
     entropied = np.pow(entropied, 2.5)
-    return entropied > 0.08
+
+    threshold = np.percentile(entropied, percentile_threshold) * 1.25
+    return entropied > threshold
 
 class Material():
-  def __init__(self, name, target_bg_lab, layer_labels, sigma=0.7, fat_threshold=0.1, edge_method = EdgeMethod()):
+  def __init__(self, name, target_bg_lab, layer_labels, sigma=0.7, fat_threshold=0.1, Edge_Method = EdgeMethod):
     self.name = name
     self.target_bg_lab = target_bg_lab
     self.layer_labels = layer_labels
     self.recommended_sigma = sigma
     self.recommended_fat_threshold = fat_threshold
-    self.edge_method = edge_method
+    self.Edge_Method = Edge_Method
 
 
 
@@ -155,8 +166,8 @@ wte2_labels = { # cielab colorspace
 wte2 = Material('WTe2', [58.50683594, 28.57762527, -2.79295444], layer_labels=wte2_labels)
 
 graphene_labels = { # cielab colorspace
-                  (50, 14, 4): 'monolayer',
-                  (48, 17, 3): 'bilayer',
+                  (49.5, 14, 4): 'monolayer',
+                  (47, 17, 3): 'bilayer',
                   (37, 31, -2): 'trilayer',
                   (30, 30, -27): 'fewlayer',
                   (50, 0, -15): 'manylayer',
@@ -164,7 +175,7 @@ graphene_labels = { # cielab colorspace
                   (53, -8, -12): 'bluish_layers',
                   (50, 1, -10): 'bluish_layers',
                   (48.1, 4.7, 10.4): 'dirt',
-                  (30, 20, -10): 'dirt',
+                #   (30, 20, -10): 'dirt',
                   (0,0,0): 'bg'
               }
 
@@ -174,7 +185,7 @@ graphene = Material(
     layer_labels=graphene_labels,
     sigma=3,
     fat_threshold=0.005,
-    edge_method = EntropyEdgeMethod(k=3),
+    Edge_Method = EntropyEdgeMethod,
   )
 
 
@@ -196,5 +207,5 @@ hBN = Material(
     layer_labels=hBN_labels, 
     sigma=0.7, 
     fat_threshold=0.1,
-    edge_method=EntropyEdgeMethod(3),
+    Edge_Method=EntropyEdgeMethod,
   )

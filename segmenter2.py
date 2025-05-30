@@ -4,12 +4,12 @@ from scipy.ndimage import label
 from tqdm import tqdm
 
 class Segmenter():
-    def __init__(self, img, material, colors=None, numbers=None, min_area = 10, max_area = 500000):
+    def __init__(self, img, material, colors=None, numbers=None, min_area = 10, max_area = 1000000, magnification=100, k=3):
         self.img = img
         self.size = img.shape[:2]
         self.target_bg_lab = material.target_bg_lab
         self.layer_labels = material.layer_labels
-        self.edge_method = material.edge_method
+        self.edge_method = material.Edge_Method(k=k, magnification=magnification)
         self.colors = colors
         self.numbers = numbers
         self.min_area = min_area
@@ -70,7 +70,10 @@ class Segmenter():
 
         for idx, i in enumerate(self.mask_ids):
             area = self.mask_areas[i]
-            if area < self.min_area:
+            if i==0:
+                # Don't label edge mask
+                self.mask_labels.append('bg')
+            elif area < self.min_area:
                 self.mask_labels.append('dirt')
             else:
                 label = layer_types[min_indices[idx]]

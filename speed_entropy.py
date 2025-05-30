@@ -62,12 +62,12 @@ def combine_sections(sections, n):
     return image
 
 
-# Subdivide and parallerl process entropy of image
+# Subdivide and parallel process entropy of image
 if __name__ == '__main__':
-    image_path = os.listdir("../monolayerGraphene/monolayer_Graphene/")[int(sys.argv[1])]
-    g1 = cv2.imread(f'../monolayerGraphene/monolayer_Graphene/{image_path}')
+    # image_path = os.listdir("../monolayerGraphene/monolayer_Graphene/")[int(sys.argv[1])]
+    g1 = cv2.imread(f'../monolayerGraphene/monolayer_Graphene/{sys.argv[1]}')
     g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-    shrink = 2.5
+    shrink = 2
     g1 = cv2.resize(g1, (int(g1.shape[1]/shrink), int(g1.shape[0]/shrink)))
 
     input = rgb2gray(g1)
@@ -87,9 +87,20 @@ if __name__ == '__main__':
     entropied = combine_sections(entropied_sections, n)
     entropied = (entropied/np.max(entropied))
     entropied = np.pow(entropied, 2.5)
-
-    
-    masks, num_masks = label(entropied < 0.09)
+    threshold = np.percentile(entropied, 75) * 1.25
+    edges = entropied < threshold
+    masks, num_masks = label(edges)
     print(num_masks)
-    plt.imshow(masks, cmap='inferno')
+
+    fig, axs = plt.subplots(1, 3, figsize=(10,10))
+    axs[0].imshow(masks, cmap='inferno')
+    axs[0].axis('off')
+
+    axs[1].imshow(edges, cmap='inferno')
+    axs[1].axis('off')
+
+    axs[2].imshow(entropied, cmap='inferno')
+    axs[2].axis('off')
+
+    plt.tight_layout()
     plt.show()
