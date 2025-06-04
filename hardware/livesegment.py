@@ -14,15 +14,15 @@ from skimage.morphology import white_tophat
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
-# gphoto2 --capture-movie --stdout | python camera.py
+# gphoto2 --capture-movie --stdout | python livesegment.py
 
 sys.stdin = sys.stdin.buffer
 
 # Create a VideoCapture object to read from stdin
-cap = cv2.VideoCapture('Test_Videos/100X.mp4')  # Use 0 for stdin
+cap = cv2.VideoCapture(0)  # Use 0 for stdin
 
 # Set the VideoCapture to read from gphoto2's stdout
-# cap.open("pipe:0", cv2.CAP_FFMPEG)
+cap.open("pipe:0", cv2.CAP_FFMPEG)
 
 colors_by_layer = {
     'monolayer': np.array([0,163,255])/255.0, # Blue
@@ -81,15 +81,17 @@ try:
             continue
 
         # Crop Frame
-        frame = crop(frame)
+        #frame = crop(frame)
         
         # Resize frame and prepare segmenter input
-        frame = cv2.resize(frame, (frame.shape[1]*2, frame.shape[0]*2))
+        frame = cv2.resize(frame, (frame.shape[1]//2, frame.shape[0]//2))
         input = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         # input = adjust_gamma(input, gamma=0.75, gain=0.5)
 
         # Initialize Segmenter
-        segmenter = Segmenter(input, graphene, colors=colors_by_layer)
+        #segmenter = Segmenter(input, graphene, colors=colors_by_layer)
+        segmenter = Segmenter(input, graphene, colors=colors_by_layer, magnification=5)
+
 
         # Run Segmenter
         segmenter.process_frame()
