@@ -54,7 +54,7 @@ number_by_layer = {
 
 # Crop Function
 def crop(input):
-    return input[51:879, 201:1440]
+    return input[1010:5710, 640:3840]
 
 def lab_correct(lab_img, current_avg_lab, target_avg_lab=[55.96122403, 28.28108621, -3.12392236]):
   result = np.ones_like(lab_img)
@@ -71,6 +71,7 @@ i = 0
 try:
     while True:
         ret, frame = cap.read()
+        #print(frame.shape)
         if not ret:
             print("Error reading frame from stream", file=sys.stderr)
             break
@@ -84,7 +85,7 @@ try:
         #frame = crop(frame)
         
         # Resize frame and prepare segmenter input
-        frame = cv2.resize(frame, (frame.shape[1]//2, frame.shape[0]//2))
+        frame = cv2.resize(frame, (frame.shape[1]*2, frame.shape[0]*2))
         input = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         # input = adjust_gamma(input, gamma=0.75, gain=0.5)
 
