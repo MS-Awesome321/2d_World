@@ -24,8 +24,9 @@ class Stage(Thorlabs.KinesisMotor):
 
 
     def set_home(self, coords=None):
-        if type(coords) != type(None):
+        if type(coords) == type(None):
             self.home_location = (self.x_motor.get_position(), self.y_motor.get_position())
+            self.home_location = (self.home_location[1], self.home_location[3], 0)
         elif (type(coords) == tuple) and coords.length == 3:
             self.home_location = coords
         else:
@@ -53,19 +54,19 @@ class Stage(Thorlabs.KinesisMotor):
         num_rows = self.short_edge // self.short_edge_dist + 1
         for i in range(num_rows):
             if i%2 == 0:
-                coord1 = (0, self.short_edge_dist * 1) + self.home_location
+                coord1 = (0, self.short_edge_dist * i, 0) + self.home_location
                 coord1 = self.rotation_matrix @ coord1
                 coords.append(coord1)
 
-                coord2 = (self.long_edge, self.short_edge_dist * 1) + self.home_location
+                coord2 = (self.long_edge, self.short_edge_dist * i, 0) + self.home_location
                 coord2 = self.rotation_matrix @ coord1
                 coords.append(coord2)
             else:
-                coord2 = (self.long_edge, self.short_edge_dist * 1) + self.home_location
+                coord2 = (self.long_edge, self.short_edge_dist * i, 0) + self.home_location
                 coord2 = self.rotation_matrix @ coord1
                 coords.append(coord2)
 
-                coord1 = (0, self.short_edge_dist * 1) + self.home_location
+                coord1 = (0, self.short_edge_dist * i, 0) + self.home_location
                 coord1 = self.rotation_matrix @ coord1
                 coords.append(coord1)
         
