@@ -1,21 +1,47 @@
-import serial
-from motor import rotate_relative
+from turret import Turret
+from focus import Focus
+import sys
+import keyboard
+from pylablib.devices import Thorlabs
+from stage import Stage
+import matplotlib.pyplot as plt
+import numpy as np
 
-s = serial.Serial('/dev/cu.usbmodemTMCSTEP1', baudrate=9600)
+# turret = Turret('COM8')
+# print(turret.rotate_to_position(int(sys.argv[1])))
+# print(turret.get_pos())
 
-if s.is_open:
-    print('OPEN')
-else:
-    print("CLOSED")
+# focus = Focus('COM7')
+# focus.rotate_relative(int(sys.argv[1]))
 
-print("How many micromoters to rotate focus: ")
-cmd = rotate_relative(int(input()))
-print(cmd)
-# [1,4,1,0,255,255,212,64,24]
-s.write(bytearray(cmd))
 
-answer = s.read(9)
-int_answer = [x for x in answer]
-print(int_answer)
+# while True:
+#     a = keyboard.read_key()
 
-s.close()
+#     if a == 'q':
+#         break
+
+#     for i in range(3):
+#         print(a)
+    
+
+# while True:
+#     key = keyboard.read_event()
+#     if key.name =='q':
+#         break
+#     print(key.name)
+#     print(key.event_type)
+
+# x_motor = Thorlabs.KinesisMotor('27503936')
+# x_motor.setup_jog(max_velocity=39108.85870456696)
+# print(x_motor.get_jog_parameters())
+
+test_stage = Stage('', '', '', magnification=20)
+test_stage.set_chip_dims(10,10)
+test_stage.set_direction(45)
+coords = test_stage.get_snake()
+coords = np.stack(coords, axis=0)
+coords = coords[:,:-1]
+
+plt.plot(coords[:,0], coords[:,1])
+plt.show()

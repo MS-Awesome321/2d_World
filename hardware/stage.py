@@ -1,6 +1,9 @@
 from pylablib.devices import Thorlabs
 from scipy.spatial.transform import Rotation as R
+from focus import Focus
+from turret import Turret
 import numpy as np
+import keyboard
 import time
 
 
@@ -21,19 +24,27 @@ class Stage:
     # ------------------------------------------------------------------ #
     # Construction / setup helpers
     # ------------------------------------------------------------------ #
-    def __init__(self, serial_num_x, serial_num_y, serial_num_z, magnification):
+    def __init__(self, serial_num_x, serial_num_y, serial_num_z, magnification=20):
+        self.motors = []
+        self.default_speeds= []
         try:
             self.x_motor = Thorlabs.KinesisMotor(serial_num_x)
+            self.motors.append(self.x_motor)
+            self.default_speeds.append(self.x_motor.get_jog_parameters())
         except:
             print("Could not mount X motor.")
 
         try:
             self.y_motor = Thorlabs.KinesisMotor(serial_num_y)
+            self.motors.append(self.y_motor)
+            self.default_speeds.append(self.y_motor.get_jog_parameters())
         except:
             print('Could not mount Y motor')
         
         try:
             self.z_motor = Thorlabs.KinesisMotor(serial_num_z)
+            self.motors.append(self.z_motor)
+            self.default_speeds.append(self.z_motor.get_jog_parameters())
         except:
             print('Could not mount Z motor.')
 
@@ -79,14 +90,14 @@ class Stage:
         self.long_edge  = long_edge_mm  * 1_000_000
         self.short_edge = short_edge_mm * 1_000_000
 
-    # ------------------------------------------------------------------ #
-    # Main routine
-    # ------------------------------------------------------------------ #
-    def start_snake(self, wait=True):
+    def change_speed(self, motor, up_down):
         """
-        Perform the raster scan.  The Z-axis is untouched here, but you can
-        sprinkle in z-moves where needed.
+        Sets speed of motor (0, 1, 2); up_down should be either '+' or '-'
         """
+
+        self.x_motor.setup_velocity
+
+    def get_snake(self):
         if None in (self.long_edge, self.short_edge):
             raise RuntimeError("Call `set_chip_dims` before `start_snake`")
 
@@ -106,6 +117,19 @@ class Stage:
                 p_world = self.rotation_matrix @ p + self.home_location  # element-wise add ✔
                 coords.append(p_world)
 
+        return coords
+
+    # ------------------------------------------------------------------ #
+    # Main routine
+    # ------------------------------------------------------------------ #
+    def start_snake(self, wait=True):
+        """
+        Perform the raster scan.  The Z-axis is untouched here, but you can
+        sprinkle in z-moves where needed.
+        """
+        
+        coords = self.get_snake()
+
         # execute the moves
         for x, y, _ in coords:       # ignore z for now
             self.x_motor.move_to(x)
@@ -113,3 +137,86 @@ class Stage:
             if wait:
                 self.x_motor.wait_for_stop()
                 self.y_motor.wait_for_stop()
+
+    # Get Motor Positions
+    def get_pos(self):
+        pos = []
+        for motor in self.motors:
+            pos.append(motor.get_position())
+
+        return pos
+
+    # Stop Motor Motion
+    def stop(self):
+        for motor in self.motors:
+            motor.stop()
+            motor.wait_for_stop()
+        
+        return True
+    
+    # Manually Control Motors
+    def start_manual_control(self, stop='esc', focus_comport=None, turret_comport=None):
+        if focus_comport:
+            focus = Focus(focus_comport)
+
+        if turret_comport:
+            turret = Turret(turret_comport)
+
+        focus_speed = 10
+
+        while True:
+            key = keyboard.read_event()
+            if key.name == stop:
+                break
+
+            if key.name == 'up':
+                if key.event_type == 'up':
+                    self.y_motor.stop('-')
+                else:
+                    self.y_motor.jog('-')
+            
+            elif key.name == 'down':
+                if key.event_type == 'up':
+                    self.y_motor.stop()
+                else:
+                    self.y_motor.jog('+')
+
+            elif key.name == 'left':
+                if key.event_type == 'up':
+                    self.x_motor.stop()
+                else:
+                    self.x_motor.jog('-')
+            
+            elif key.name == 'right':
+                if key.event_type == 'up':
+                    self.x_motor.stop()
+                else:
+                    self.x_motor.jog('+')
+
+            if turret_comport:
+                if key.name == '1':
+                    turret.rotate_to_position(1)
+                elif key.name == '2':
+                    turret.rotate_to_position(2)
+                elif key.name == '3':
+                    turret.rotate_to_position(3)
+                elif key.name == '4':
+                    turret.rotate_to_position(4)
+                elif key.name == '5':
+                    turret.rotate_to_position(5)
+            
+            if focus_comport:
+                if key.name == '=':
+                    focus.rotate_relative(focus_speed)
+                    time.sleep(0.01 * focus_speed)
+                elif key.name == '-':
+                    focus.rotate_relative(-1*focus_speed)
+                    time.sleep(0.01 * focus_speed)
+                elif key.name == '0':
+                    focus_speed += 5
+                    print(f'Focus Speed: {focus_speed}')
+                elif key.name == '9':
+                    focus_speed -= 5
+                    print(f'Focus Speed: {focus_speed}')
+        
+        return True
