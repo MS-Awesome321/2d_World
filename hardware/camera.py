@@ -3,14 +3,10 @@ import cv2
 import numpy as np
 
 # gphoto2 --capture-movie --stdout | python camera.py
-
 sys.stdin = sys.stdin.buffer
 
 # Create a VideoCapture object to read from stdin
-cap = cv2.VideoCapture(0)  # Use 0 for stdin
-
-# Set the VideoCapture to read from gphoto2's stdout
-cap.open("pipe:0", cv2.CAP_FFMPEG)
+cap = cv2.VideoCapture("movie.mjpg")  # Use pipe:0 for stdin
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 org = (50, 50)
@@ -43,7 +39,8 @@ try:
         cv2.imshow('Blur Factor Demo', frame)
 
         # NEVER REMOVE
-        cv2.waitKey(1)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
 except KeyboardInterrupt:
     # graceful exit
