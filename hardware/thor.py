@@ -2,14 +2,17 @@ from pylablib.devices import Thorlabs
 import time
 
 # Connect to motor
-stage = Thorlabs.KinesisMotor("27503936")
+stage = Thorlabs.KinesisMotor("27503951")
+# X: 27503936
+# Y: 27503951
+
 
 # Get current position (in nanometers)
 pos = stage.get_position()
 print(f"Current position: {pos / 1e6:.3f} mm")
 
 # Move 2 mm down (2,000,000 nm)
-target = pos - 40_000_000
+target = pos + 20_000_000
 stage.move_to(target)
 
 # Wait for completion
