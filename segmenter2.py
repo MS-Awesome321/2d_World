@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from scipy.ndimage import label
+from skimage.color import rgb2lab
 from tqdm import tqdm
 
 class Segmenter():
@@ -16,6 +17,9 @@ class Segmenter():
         self.max_area = max_area
         
         self.lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
+        self.lab[:,:,0] = self.lab[:,:,0] * 100.0/255.0
+        self.lab[:,:,0] -= 128
+        self.lab[:,:,0] -= 128
 
     def make_masks(self):
         self.edges = self.edge_method(self.img)
@@ -37,7 +41,6 @@ class Segmenter():
         # Compute sum for each channel using bincount, then divide by counts
         for c in range(3):
             sums = np.bincount(flat_masks, weights=flat_lab[:, c], minlength=num_masks)
-            # Avoid division by zero
             avg_labs[:, c] = sums / self.mask_areas
 
         self.avg_labs = avg_labs
@@ -115,4 +118,17 @@ class Segmenter():
         # Map each pixel in self.masks to its number using the lookup table
         result = number_table[self.masks]
         self.numbered_masks = result
+        return result
+    
+    def labelify(self, shrink=1):
+        """
+        Returns a 2D array where each pixel contains the string label of its segment.
+        """
+        # Prepare a lookup table for labels for all mask ids
+        label_table = np.array(self.mask_labels, dtype=object)
+        # Map each pixel in self.masks to its label using the lookup table
+        new_size = (int(shrink*self.size[1]), int(shrink*self.size[0]))
+        resized_masks = cv2.resize(self.masks.astype('uint8'), new_size, interpolation=cv2.INTER_NEAREST)
+        result = label_table[resized_masks]
+        self.labeled_masks = result
         return result

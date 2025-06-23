@@ -1,52 +1,42 @@
 from pylablib.devices import Thorlabs
-from scipy.spatial.transform import Rotation as R
-from focus import Focus
-from turret import Turret
 import numpy as np
-import keyboard
 import time
 
 
 class Stage:
     """
-    Scan a rectangular chip with a snake-like trajectory under a microscope
-    using three Thorlabs Kinesis stages.
+    Control microscop stage, focus, and lens turret.
     """
 
     # spacing (µm) between adjacent scan rows for common objectives
     _ROW_SPACING_UM = {
-        100: 255_000,   # 255 µm × 1000 for Kinesis' µm units
+        100: 255_000,   # 255 µm × 1000 for Kinesis' nm units
         50:  510_000,
         20: 1_260_000,
-        10: 5_040_000,
+        10: 2_520_000,
+        5: 5_040_000,
     }
 
     # ------------------------------------------------------------------ #
     # Construction / setup helpers
     # ------------------------------------------------------------------ #
-    def __init__(self, serial_num_x, serial_num_y, serial_num_z, magnification=20):
-        self.motors = []
-        self.default_speeds= []
-        try:
-            self.x_motor = Thorlabs.KinesisMotor(serial_num_x)
-            self.motors.append(self.x_motor)
-            self.default_speeds.append(self.x_motor.get_jog_parameters())
-        except:
-            print("Could not mount X motor.")
+    def __init__(self, serial_num_x, serial_num_y, magnification=20, test_mode = False):
+        if not test_mode:
+            self.motors = []
+            self.default_speeds= []
+            try:
+                self.x_motor = Thorlabs.KinesisMotor(serial_num_x, scale=True)
+                self.motors.append(self.x_motor)
+                self.default_speeds.append(self.x_motor.get_jog_parameters().max_velocity // 4)
+            except:
+                print("Could not mount X motor.")
 
-        try:
-            self.y_motor = Thorlabs.KinesisMotor(serial_num_y)
-            self.motors.append(self.y_motor)
-            self.default_speeds.append(self.y_motor.get_jog_parameters())
-        except:
-            print('Could not mount Y motor')
-        
-        try:
-            self.z_motor = Thorlabs.KinesisMotor(serial_num_z)
-            self.motors.append(self.z_motor)
-            self.default_speeds.append(self.z_motor.get_jog_parameters())
-        except:
-            print('Could not mount Z motor.')
+            try:
+                self.y_motor = Thorlabs.KinesisMotor(serial_num_y, scale=True)
+                self.motors.append(self.y_motor)
+                self.default_speeds.append(self.y_motor.get_jog_parameters().max_velocit // 4)
+            except:
+                print('Could not mount Y motor')
 
         # pick the correct row spacing for the chosen objective
         try:
@@ -55,8 +45,8 @@ class Stage:
             raise ValueError(f"Unsupported objective magnification: {magnification}")
 
         self.mag = magnification
-        self.home_location   = np.zeros(3)   # (x, y, z) in stage units (µm)
-        self.rotation_matrix = np.eye(3)     # lab-frame = chip-frame at default
+        self.home_location   = np.zeros(2)
+        self.rotation_matrix = np.eye(2)
         self.long_edge = None                # set later in µm
         self.short_edge = None               # set later in µm
 
@@ -68,10 +58,10 @@ class Stage:
         if coords is None:
             self.home_location = np.array(
                 [self.x_motor.get_position(),
-                 self.y_motor.get_position(),
-                 0.0], dtype=float
+                 self.y_motor.get_position()], 
+                 dtype=float
             )
-        elif len(coords) == 3:
+        elif len(coords) == 2:
             self.home_location = np.asarray(coords, dtype=float)
         else:
             raise TypeError("`coords` must be None or an iterable of length 3")
@@ -81,7 +71,11 @@ class Stage:
         Choose the direction of the fast-scan axis: *bearing_deg* is a
         counter-clockwise angle (degrees) from +x.
         """
-        self.rotation_matrix = R.from_euler("z", bearing_deg, degrees=True).as_matrix()
+        bearing_deg *= np.pi/180
+        self.rotation_matrix = np.array([
+                                    [np.cos(bearing_deg), -np.sin(bearing_deg)],
+                                    [np.sin(bearing_deg),  np.cos(bearing_deg)]
+                                ])
 
     def set_chip_dims(self, long_edge_mm, short_edge_mm):
         """
@@ -92,10 +86,21 @@ class Stage:
 
     def change_speed(self, motor, up_down):
         """
-        Sets speed of motor (0, 1, 2); up_down should be either '+' or '-'
+        Sets speed of motor (0 or 1); up_down should be either '+' or '-'
         """
 
-        self.x_motor.setup_velocity
+        current_speed = self.motors[motor].get_jog_parameters().max_velocity
+        speed_change = self.default_speeds[motor]
+
+        if up_down=='+':
+            new_speed = current_speed + speed_change
+        elif up_down=='-':
+            new_speed = current_speed - speed_change
+        else:
+            raise ValueError('Invalid parameter passed for up_down')
+        
+        self.motors[motor].setup_jog(max_velocity=new_speed)
+        return True
 
     def get_snake(self):
         if None in (self.long_edge, self.short_edge):
@@ -107,8 +112,8 @@ class Stage:
         for i in range(n_rows):
             y_local = self.short_edge_dist * i
 
-            left_local  = np.array([0,             y_local, 0], dtype=float)
-            right_local = np.array([self.long_edge, y_local, 0], dtype=float)
+            left_local  = np.array([0,             y_local], dtype=float)
+            right_local = np.array([self.long_edge, y_local], dtype=float)
 
             # even rows: left→right; odd rows: right→left
             row_pts = (left_local, right_local) if i % 2 == 0 else (right_local, left_local)
@@ -131,7 +136,7 @@ class Stage:
         coords = self.get_snake()
 
         # execute the moves
-        for x, y, _ in coords:       # ignore z for now
+        for x, y in coords:       # only x and y
             self.x_motor.move_to(x)
             self.y_motor.move_to(y)
             if wait:
@@ -156,6 +161,10 @@ class Stage:
     
     # Manually Control Motors
     def start_manual_control(self, stop='esc', focus_comport=None, turret_comport=None):
+        import keyboard
+        from focus import Focus
+        from turret import Turret
+
         if focus_comport:
             focus = Focus(focus_comport)
 
@@ -213,10 +222,12 @@ class Stage:
                     focus.rotate_relative(-1*focus_speed)
                     time.sleep(0.01 * focus_speed)
                 elif key.name == '0':
-                    focus_speed += 5
+                    if focus_speed < 2000:
+                        focus_speed += 5
                     print(f'Focus Speed: {focus_speed}')
                 elif key.name == '9':
-                    focus_speed -= 5
+                    if focus_speed > 5:
+                        focus_speed -= 5
                     print(f'Focus Speed: {focus_speed}')
         
         return True

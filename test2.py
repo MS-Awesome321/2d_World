@@ -43,7 +43,7 @@ else:
 
 g1 = cv2.imread(f'../monolayerGraphene/monolayer_Graphene/{filename}')
 g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-shrink = 1
+shrink = 2
 g1 = cv2.resize(g1, (int(g1.shape[1]/shrink), int(g1.shape[0]/shrink)))
 
 # Initialize Segmenter
@@ -57,7 +57,7 @@ segmenter.get_all_avg_lab()
 watch.clock()
 segmenter.label_masks()
 watch.clock()
-segmenter.prettify()
+result = segmenter.prettify()
 watch.clock()
 
 # Show Results
@@ -66,7 +66,7 @@ fig, axs = plt.subplots(1, 4, figsize=(10,10))
 axs[0].imshow(g1, cmap='inferno')
 axs[0].axis('off')
 
-axs[1].imshow(segmenter.colored_masks, cmap='inferno')
+axs[1].imshow(result, cmap='inferno')
 axs[1].axis('off')
 
 axs[2].imshow(segmenter.edges, cmap='inferno')

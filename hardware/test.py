@@ -1,8 +1,8 @@
 from turret import Turret
 from focus import Focus
 import sys
-import keyboard
-from pylablib.devices import Thorlabs
+# import keyboard
+# from pylablib.devices import Thorlabs
 from stage import Stage
 import matplotlib.pyplot as plt
 import numpy as np
@@ -36,12 +36,11 @@ import numpy as np
 # x_motor.setup_jog(max_velocity=39108.85870456696)
 # print(x_motor.get_jog_parameters())
 
-test_stage = Stage('', '', '', magnification=20)
-test_stage.set_chip_dims(10,10)
-test_stage.set_direction(45)
+test_stage = Stage('', '', magnification=20, test_mode=True)
+test_stage.set_chip_dims(50,50)
+test_stage.set_direction(90)
 coords = test_stage.get_snake()
 coords = np.stack(coords, axis=0)
-coords = coords[:,:-1]
 
 plt.plot(coords[:,0], coords[:,1])
 plt.show()

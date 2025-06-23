@@ -12,7 +12,7 @@ pos = stage.get_position()
 print(f"Current position: {pos / 1e6:.3f} mm")
 
 # Move 2 mm down (2,000,000 nm)
-target = pos + 20_000_000
+target = pos + 2_000_000
 stage.move_to(target)
 
 # Wait for completion
