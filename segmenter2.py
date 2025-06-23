@@ -1,8 +1,6 @@
 import cv2
 import numpy as np
 from scipy.ndimage import label
-from skimage.color import rgb2lab
-from tqdm import tqdm
 
 class Segmenter():
     def __init__(self, img, material, colors=None, numbers=None, min_area = 10, max_area = 1000000, magnification=100, k=3):

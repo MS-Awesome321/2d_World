@@ -1,16 +1,10 @@
 import sys
 import cv2
-import os
 import numpy as np
-sys.path.append(os.path.abspath('/Users/mayanksengupta/Desktop/2d_World/')) # add path to folder containing segmenter.py
+sys.path.append('/Users/mayanksengupta/Desktop/2d_World/')
 from segmenter2 import Segmenter
 from material import wte2, graphene, EntropyEdgeMethod
 import warnings
-from skimage.filters.rank import entropy
-from skimage.morphology import disk
-from skimage.color import lab2rgb, rgb2gray, rgb2yuv, rgb2lab
-from skimage.exposure import adjust_gamma
-from skimage.morphology import white_tophat
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -19,10 +13,10 @@ warnings.filterwarnings("ignore", category=UserWarning)
 sys.stdin = sys.stdin.buffer
 
 # Create a VideoCapture object to read from stdin
-cap = cv2.VideoCapture(0)  # Use 0 for stdin
+cap = cv2.VideoCapture('Test_Videos/100X.mp4') 
 
 # Set the VideoCapture to read from gphoto2's stdout
-cap.open("pipe:0", cv2.CAP_FFMPEG)
+# cap.open("pipe:0", cv2.CAP_FFMPEG)
 
 colors_by_layer = {
     'monolayer': np.array([0,163,255])/255.0, # Blue
@@ -54,17 +48,7 @@ number_by_layer = {
 
 # Crop Function
 def crop(input):
-    return input[1010:5710, 640:3840]
-
-def lab_correct(lab_img, current_avg_lab, target_avg_lab=[55.96122403, 28.28108621, -3.12392236]):
-  result = np.ones_like(lab_img)
-  result[:,:,0] = lab_img[:,:,0] - (current_avg_lab[0] - target_avg_lab[0])*np.ones_like(lab_img[:,:,0])
-  result[:,:,1] = lab_img[:,:,1] - (current_avg_lab[1] - target_avg_lab[1])*np.ones_like(lab_img[:,:,1])
-  result[:,:,2] = lab_img[:,:,2] - (current_avg_lab[2] - target_avg_lab[2])*np.ones_like(lab_img[:,:,2])
-  return result
-
-def rgb_lab_correct(img, current_avg_lab, target_avg_lab=[55.96122403, 28.28108621, -3.12392236]):
-  return lab2rgb(lab_correct(rgb2lab(img), current_avg_lab, target_avg_lab))
+    return input[210:770, 400:1220]
 
 i = 0
 
@@ -73,25 +57,25 @@ try:
         ret, frame = cap.read()
         #print(frame.shape)
         if not ret:
-            print("Error reading frame from stream", file=sys.stderr)
             break
 
         # Read every tenth frame
         i+=1
-        if i%10 != 0:
+        if i%5 != 0:
             continue
 
         # Crop Frame
-        #frame = crop(frame)
+        frame = crop(frame)
         
         # Resize frame and prepare segmenter input
-        frame = cv2.resize(frame, (frame.shape[1]*2, frame.shape[0]*2))
+        grow = 1
+        frame = cv2.resize(frame, (int(frame.shape[1]*grow), int(frame.shape[0]*grow)), cv2.INTER_NEAREST)
         input = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         # input = adjust_gamma(input, gamma=0.75, gain=0.5)
 
         # Initialize Segmenter
         #segmenter = Segmenter(input, graphene, colors=colors_by_layer)
-        segmenter = Segmenter(input, graphene, colors=colors_by_layer, magnification=5)
+        segmenter = Segmenter(input, graphene, colors=colors_by_layer, magnification=100)
 
 
         # Run Segmenter
