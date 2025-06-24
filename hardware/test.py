@@ -33,13 +33,13 @@ import numpy as np
 #     print(key.event_type)
 
 x_motor = Thorlabs.KinesisMotor('27503936')
-print(x_motor.get_jog_parameters())
-x_motor.setup_jog(acceleration=518630)
-print(x_motor.get_jog_parameters())
+print(x_motor.get_velocity_parameters())
+x_motor.setup_velocity(max_velocity=20_000, acceleration=518_630)
+print(x_motor.get_velocity_parameters())
 
 # test_stage = Stage('', '', magnification=20, test_mode=True)
 # test_stage.set_chip_dims(50,50)
-# test_stage.set_direction(90)
+# test_stage.set_direction(45)
 # coords = test_stage.get_snake()
 # coords = np.stack(coords, axis=0)
 

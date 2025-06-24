@@ -5,16 +5,16 @@ import time
 
 class Stage:
     """
-    Control microscop stage, focus, and lens turret.
+    Control microscope stage, focus, and lens turret.
     """
 
     # spacing (µm) between adjacent scan rows for common objectives
     _ROW_SPACING_UM = {
-        100: 255_000,   # 255 µm × 1000 for Kinesis' nm units
-        50:  510_000,
-        20: 1_260_000,
-        10: 2_520_000,
-        5: 5_040_000,
+        100: 2_550,   # 255 µm × 1000 for Kinesis' nm units
+        50:  5_100,
+        20: 16_400,
+        10: 25_200,
+        5: 50_400,
     }
 
     # ------------------------------------------------------------------ #
@@ -81,8 +81,8 @@ class Stage:
         """
         Store chip dimensions in microns (Kinesis’ distance units).
         """
-        self.long_edge  = long_edge_mm  * 1_000_000
-        self.short_edge = short_edge_mm * 1_000_000
+        self.long_edge  = long_edge_mm  * 100_000
+        self.short_edge = short_edge_mm * 100_000
 
     def change_speed(self, motor, up_down):
         """
@@ -138,9 +138,8 @@ class Stage:
         for x, y in coords:       # only x and y
             self.x_motor.move_to(x)
             self.y_motor.move_to(y)
-            if wait:
-                self.x_motor.wait_for_stop()
-                self.y_motor.wait_for_stop()
+            self.x_motor.wait_for_stop()
+            self.y_motor.wait_for_stop()
 
     # Get Motor Positions
     def get_pos(self):

@@ -26,8 +26,7 @@ try:
         score = np.log(score)
 
         # Overlay Text
-        frame = cv2.putText(frame, 'Blur Factor = '+str(score)+" "+str(prev_score), org, font, 
-                    fontScale, color, thickness, cv2.LINE_AA)
+        # frame = cv2.putText(frame, 'Blur Factor = '+str(score)+" "+str(prev_score), org, font, fontScale, color, thickness, cv2.LINE_AA)
 
         if prev_score:
             if score < prev_score:
@@ -42,14 +41,16 @@ try:
                 focus_speed = 25
             elif score < 4.25:
                 focus_speed = 10
-            else:
+            elif score < 4.5:
                 focus_speed = 5
+            else:
+                focus_speed = 0
 
             focus.rotate_relative(direction*focus_speed)
             time.sleep(0.008 * focus_speed)
         prev_score = score
         
-        cv2.imshow('Python View',frame)
+        # cv2.imshow('Python View',frame)
 
         if cv2.waitKey(25) & 0xFF == ord('q'):
             cv2.destroyAllWindows()
