@@ -34,7 +34,7 @@ class Stage:
             try:
                 self.y_motor = Thorlabs.KinesisMotor(serial_num_y, scale=True)
                 self.motors.append(self.y_motor)
-                self.default_speeds.append(self.y_motor.get_jog_parameters().max_velocit // 4)
+                self.default_speeds.append(self.y_motor.get_jog_parameters().max_velocity // 4)
             except:
                 print('Could not mount Y motor')
 
@@ -129,8 +129,7 @@ class Stage:
     # ------------------------------------------------------------------ #
     def start_snake(self, wait=True):
         """
-        Perform the raster scan.  The Z-axis is untouched here, but you can
-        sprinkle in z-moves where needed.
+        Perform the raster scan.
         """
         
         coords = self.get_snake()
@@ -217,10 +216,10 @@ class Stage:
             if focus_comport:
                 if key.name == '=':
                     focus.rotate_relative(focus_speed)
-                    time.sleep(0.01 * focus_speed)
+                    time.sleep(0.0075 * focus_speed)
                 elif key.name == '-':
                     focus.rotate_relative(-1*focus_speed)
-                    time.sleep(0.01 * focus_speed)
+                    time.sleep(0.0075 * focus_speed)
                 elif key.name == '0':
                     if focus_speed < 2000:
                         focus_speed += 5

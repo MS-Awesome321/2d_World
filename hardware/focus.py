@@ -5,7 +5,7 @@ class Focus:
     def __init__(self, comport, baudrate=115200):
         self.mm_to_steps = 32000 * 5
         self.um_to_steps = 32 * 5
-        self.position = 0  # saved position that will persist
+        self.position = 0
 
         self.serial_port = serial.Serial(
             port=comport,
@@ -86,6 +86,9 @@ class Focus:
     def set_zero(self):
         self.position = 0
         return self.position
+    
+    def home(self):
+        self.rotate_relative(self.position)
 
     def emergencystop(self):
         value_bytes = self.um2byte(0)
