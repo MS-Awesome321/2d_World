@@ -108,18 +108,20 @@ class Stage:
 
         coords = []
         n_rows = int(self.short_edge // self.short_edge_dist) + 1
+        n_cols = int(self.long_edge // self.short_edge_dist) + 1  # Number of points along long edge
 
         for i in range(n_rows):
             y_local = self.short_edge_dist * i
 
-            left_local  = np.array([0,             y_local], dtype=float)
-            right_local = np.array([self.long_edge, y_local], dtype=float)
+            # Generate points spaced self.short_edge_dist apart along the long edge
+            row_points = [np.array([self.short_edge_dist * j, y_local], dtype=float) for j in range(n_cols)]
 
             # even rows: left→right; odd rows: right→left
-            row_pts = (left_local, right_local) if i % 2 == 0 else (right_local, left_local)
+            if i % 2 == 1:
+                row_points = row_points[::-1]
 
-            for p in row_pts:
-                p_world = self.rotation_matrix @ p + self.home_location  # element-wise add ✔
+            for p in row_points:
+                p_world = self.rotation_matrix @ p + self.home_location
                 coords.append(p_world)
 
         return coords
@@ -127,7 +129,10 @@ class Stage:
     # ------------------------------------------------------------------ #
     # Main routine
     # ------------------------------------------------------------------ #
-    def start_snake(self, wait=True):
+    def _placeholder():
+        pass
+
+    def start_snake(self, method1=_placeholder, method2=_placeholder):
         """
         Perform the raster scan.
         """
@@ -140,6 +145,8 @@ class Stage:
             self.y_motor.move_to(y)
             self.x_motor.wait_for_stop()
             self.y_motor.wait_for_stop()
+            method1()
+            method2()
 
     # Get Motor Positions
     def get_pos(self):

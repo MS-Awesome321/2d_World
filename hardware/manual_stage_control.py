@@ -5,6 +5,8 @@ x = '27503936'
 y = '27503951'
 
 test_stage = Stage(x, y, 50)
+test_stage.x_motor.setup_velocity(max_velocity=100_000, acceleration=700_000)
+test_stage.y_motor.setup_velocity(max_velocity=100_000, acceleration=700_000)
 
 try:
     print('Starting Manual Motor Control')
