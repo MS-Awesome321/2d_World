@@ -56,7 +56,7 @@ class Focus:
             dir_bit = 1
         else:
             dir_bit = int((int(dist > 0)))
-        value = 0
+
         if abs(dist) > 2000:  # don't allow movement if it is > 2 mm
             return [0, 0, 0, 0]
         if dir_bit == 1:

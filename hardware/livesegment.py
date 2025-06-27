@@ -3,12 +3,27 @@ import cv2
 import numpy as np
 sys.path.append('C:/Users/PHY-Wulabmobile1/Desktop/test/2d_World/')
 from segmenter2 import Segmenter
-from material import wte2, graphene, EntropyEdgeMethod
+from material import wte2, graphene, EntropyEdgeMethod, hessian_determinant
+from scipy.ndimage import gaussian_filter, gaussian_gradient_magnitude
+from skimage.filters import sobel, unsharp_mask, farid
 import warnings
 from PIL import ImageGrab
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
+<<<<<<< HEAD
+=======
+# gphoto2 --capture-movie --stdout | python livesegment.py
+
+sys.stdin = sys.stdin.buffer
+
+# Create a VideoCapture object to read from stdin
+cap = cv2.VideoCapture('Test_Videos/20X_1.mp4') 
+
+# Set the VideoCapture to read from gphoto2's stdout
+# cap.open("pipe:0", cv2.CAP_FFMPEG)
+
+>>>>>>> 673af25 (some tests)
 colors_by_layer = {
     'monolayer': np.array([0,163,255])/255.0, # Blue
     'bilayer': np.array([29,255,0])/255.0, # Green
@@ -22,6 +37,13 @@ colors_by_layer = {
     'bg': np.array([0, 0, 0])/255.0, # Uncolored
 }
 
+<<<<<<< HEAD
+=======
+# Crop Function
+def crop(input):
+    return input[210:770, 400:1220]
+
+>>>>>>> 673af25 (some tests)
 i = 0
 
 try:
@@ -44,11 +66,20 @@ try:
 
 
         # Run Segmenter
-        segmenter.process_frame()
-        segmenter.prettify()
-        segmenter_output = (segmenter.colored_masks * 255).astype(np.uint8)
+        # segmenter.process_frame()
+        # segmenter.prettify()
+        # segmenter_output = (segmenter.colored_masks * 255).astype(np.uint8)
 
-        output = cv2.cvtColor(segmenter_output.astype('uint8'), cv2.COLOR_RGB2BGR)
+        # output = cv2.cvtColor((255*EntropyEdgeMethod(magnification=20, sigma=1, threshold=0.875)(frame)).astype('uint8'), cv2.COLOR_RGB2BGR)
+        edges = farid(cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY))
+        edges = edges/np.max(edges)
+        edges = np.pow(edges, 2**(-2))
+        fattened = edges.copy()
+        fattened[fattened < 0.22] = 0
+        fattened = gaussian_filter(edges, sigma=2)
+        edges[edges < 0.3] = 2*fattened[edges < 0.3]
+        # edges = edges > 0.22
+        output = cv2.cvtColor((255*edges).astype('uint8'), cv2.COLOR_GRAY2BGR)
 
         # Display the frame
         # shown = np.concatenate((output, frame), axis=1)

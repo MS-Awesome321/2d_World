@@ -1,10 +1,10 @@
 from skimage.feature import canny
 from skimage.color import lab2rgb, rgb2gray, rgb2lab
 from skimage.filters.rank import entropy
+from skimage.filters import sobel, unsharp_mask
 from scipy.ndimage import gaussian_filter, gaussian_gradient_magnitude
 from skimage.morphology import disk
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
 import concurrent.futures
 
@@ -105,27 +105,43 @@ def combine_sections(sections, n, original_shape=None):
             idx += 1
     return image
 
+def hessian_determinant(image, sigma=1):
+    """
+    Calculate the determinant of the Hessian matrix at each point in the image.
+    Args:
+        image: 2D numpy array (grayscale image)
+        sigma: Gaussian smoothing parameter
+    Returns:
+        det_H: 2D numpy array of the same shape as image
+    """
+    # Second derivatives
+    Ixx = gaussian_filter(image, sigma=sigma, order=(2, 0))
+    Iyy = gaussian_filter(image, sigma=sigma, order=(0, 2))
+    Ixy = gaussian_filter(image, sigma=sigma, order=(1, 1))
+    # Determinant of Hessian
+    det_H = Ixx * Iyy - Ixy ** 2
+    return det_H
+
 class EntropyEdgeMethod(EdgeMethod):
-  def __init__(self, k=3, magnification=20):
+  def __init__(self, k=3, magnification=20, sigma=0, threshold=None):
     self.k = k
     self.mag = magnification
-    
+    self.sigma = sigma
+    self.threshold = threshold
 
   def __call__(self, img):
     '''
     Input 2K or 4K resolution images for best results.
     '''
 
-    input = rgb2gray(img)
+    input = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     sections = subdivide(input, self.k)
     if self.mag <= 20:
        disk_radius = 2
        percentile_threshold = 87
-       threshold = 0.125
     else:
-       disk_radius = 8
-       percentile_threshold = 20
-       threshold = 0.15
+      disk_radius = 12
+      percentile_threshold = 80
 
     footprint = disk(disk_radius)
 
@@ -134,11 +150,25 @@ class EntropyEdgeMethod(EdgeMethod):
       entropied_sections = [f.result() for f in futures]
 
     entropied = combine_sections(entropied_sections, self.k)
+    entropied = np.pow(entropied, 2**(-2))
     entropied = (entropied/np.max(entropied))
-    entropied = np.pow(entropied, 2.5)
 
-    # threshold = np.percentile(entropied, percentile_threshold) * 1.25
-    return entropied > threshold
+    # sobeled = sobel(input)
+    # sobeled = np.pow(sobeled, 2**(-2))
+    # sobeled = (sobeled/np.max(sobeled))
+
+    # entropied = 2*entropied + sobeled
+    # entropied = np.pow(entropied, 2**2)
+    # entropied = (entropied/np.max(entropied))
+
+    if self.threshold is None:
+      threshold = np.percentile(entropied, percentile_threshold) * 1.25
+    else:
+       threshold = self.threshold
+    # return entropied > threshold
+    entropied[entropied < threshold] = 0
+    entropied = gaussian_filter(entropied, sigma=self.sigma)
+    return entropied
 
 class Material():
   def __init__(self, name, target_bg_lab, layer_labels, sigma=0.7, fat_threshold=0.1, Edge_Method = EdgeMethod):
@@ -148,8 +178,6 @@ class Material():
     self.recommended_sigma = sigma
     self.recommended_fat_threshold = fat_threshold
     self.Edge_Method = Edge_Method
-
-
 
 
 # Make each material
@@ -169,7 +197,7 @@ wte2 = Material('WTe2', [58.50683594, 28.57762527, -2.79295444], layer_labels=wt
 
 graphene_labels = { # cielab colorspace
                   (49.5, 16, 4): 'monolayer',
-                  (47, 17, 3): 'bilayer',
+                  (48, 17, 3): 'bilayer',
                   (37, 31, -2): 'trilayer',
                   (30, 30, -27): 'fewlayer',
                   (50, 0, -15): 'manylayer',

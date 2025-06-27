@@ -14,10 +14,10 @@ class Segmenter():
         self.min_area = min_area
         self.max_area = max_area
         
-        self.lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
+        self.lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB).astype(np.int16)
         self.lab[:,:,0] = self.lab[:,:,0] * 100.0/255.0
-        self.lab[:,:,0] -= 128
-        self.lab[:,:,0] -= 128
+        self.lab[:,:,1] -= 128
+        self.lab[:,:,2] -= 128
 
     def make_masks(self):
         self.edges = self.edge_method(self.img)
