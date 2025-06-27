@@ -23,12 +23,12 @@ colors_by_layer = {
 }
 
 class PhotoShoot():
-    def __init__(self, photo_dir='', filename=None, return_name=False, wait=True):
+    def __init__(self, photo_dir='', filename=None, return_name=False, wait_and_return=True):
         self.num_photos = 0
         self.current_dir = f'{os.getcwd()}\\{photo_dir}'
         self.filename = filename
         self.return_name = return_name
-        self.wait = wait
+        self.wait_and_return = wait_and_return
         os.chdir(self.current_dir)
 
         # Start persistent gphoto2 shell session
@@ -42,7 +42,7 @@ class PhotoShoot():
             bufsize=1
         )
 
-    def take_photo(self, filename=None, return_name=False):
+    def take_photo(self, filename=None, return_name=False, preview=False):
         if filename is None:
             if self.filename is None:
                 filename = f'capt{self.num_photos:04}.jpg'
@@ -52,19 +52,24 @@ class PhotoShoot():
         full_path = full_path.replace('\\', '/')
 
         # Send capture command to persistent shell
-        cmd = 'capture-image-and-download \n'
+        if preview:
+            cmd = 'capture-preview \n'
+            delay = 2
+        else:
+            cmd = 'capture-image-and-download \n'
+            delay = 5
         self.gp_shell.stdin.write(cmd)
         self.gp_shell.stdin.flush()
 
-        if self.wait:
-            time.sleep(5)
+        if self.wait_and_return:
+            time.sleep(delay)
 
-        img = cv2.imread(full_path, cv2.IMREAD_COLOR)
-        self.num_photos += 1
-        if self.return_name or return_name:
-            return img, full_path
-        else:
-            return img
+            img = cv2.imread(full_path, cv2.IMREAD_COLOR)
+            self.num_photos += 1
+            if self.return_name or return_name:
+                return img, full_path
+            else:
+                return img
 
     def __del__(self):
         try:
@@ -83,7 +88,7 @@ class AutoFocus():
         direction = 1
         ps = PhotoShoot('photo_dir')
         for i in range(5):
-            frame = ps.take_photo()
+            frame = ps.take_photo(preview=True)
             score = cv2.Laplacian(frame, cv2.CV_32FC1).var()
             score = np.log(score)
             print(score)

@@ -132,7 +132,7 @@ class Stage:
     def _placeholder():
         pass
 
-    def start_snake(self, method1=_placeholder, method2=_placeholder):
+    def start_snake(self, methods=[_placeholder]):
         """
         Perform the raster scan.
         """
@@ -145,8 +145,8 @@ class Stage:
             self.y_motor.move_to(y)
             self.x_motor.wait_for_stop()
             self.y_motor.wait_for_stop()
-            method1()
-            method2()
+            for method in methods:
+                method()
 
     # Get Motor Positions
     def get_pos(self):

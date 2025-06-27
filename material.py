@@ -137,11 +137,11 @@ class EntropyEdgeMethod(EdgeMethod):
     input = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     sections = subdivide(input, self.k)
     if self.mag <= 20:
-       disk_radius = 2
-       percentile_threshold = 87
+       disk_radius = 4
+       percentile_threshold = 80
     else:
-      disk_radius = 12
-      percentile_threshold = 80
+      disk_radius = 15
+      percentile_threshold = 40
 
     footprint = disk(disk_radius)
 
@@ -150,7 +150,8 @@ class EntropyEdgeMethod(EdgeMethod):
       entropied_sections = [f.result() for f in futures]
 
     entropied = combine_sections(entropied_sections, self.k)
-    entropied = np.pow(entropied, 2**(-2))
+    # entropied = np.pow(entropied, 2**(-2))
+    entropied = np.pow(entropied, 2.5)
     entropied = (entropied/np.max(entropied))
 
     # sobeled = sobel(input)
@@ -165,10 +166,10 @@ class EntropyEdgeMethod(EdgeMethod):
       threshold = np.percentile(entropied, percentile_threshold) * 1.25
     else:
        threshold = self.threshold
-    # return entropied > threshold
-    entropied[entropied < threshold] = 0
-    entropied = gaussian_filter(entropied, sigma=self.sigma)
-    return entropied
+    return entropied > threshold
+    # entropied[entropied < threshold] = 0
+    # entropied = gaussian_filter(entropied, sigma=self.sigma)
+    # return entropied
 
 class Material():
   def __init__(self, name, target_bg_lab, layer_labels, sigma=0.7, fat_threshold=0.1, Edge_Method = EdgeMethod):
@@ -196,8 +197,8 @@ wte2_labels = { # cielab colorspace
 wte2 = Material('WTe2', [58.50683594, 28.57762527, -2.79295444], layer_labels=wte2_labels)
 
 graphene_labels = { # cielab colorspace
-                  (49.5, 16, 4): 'monolayer',
-                  (48, 17, 3): 'bilayer',
+                  (51, 13, 1): 'monolayer',
+                  (47.5, 17, 3): 'bilayer',
                   (37, 31, -2): 'trilayer',
                   (30, 30, -27): 'fewlayer',
                   (50, 0, -15): 'manylayer',

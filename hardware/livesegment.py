@@ -11,8 +11,6 @@ from PIL import ImageGrab
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
-<<<<<<< HEAD
-=======
 # gphoto2 --capture-movie --stdout | python livesegment.py
 
 sys.stdin = sys.stdin.buffer
@@ -23,7 +21,6 @@ cap = cv2.VideoCapture('Test_Videos/20X_1.mp4')
 # Set the VideoCapture to read from gphoto2's stdout
 # cap.open("pipe:0", cv2.CAP_FFMPEG)
 
->>>>>>> 673af25 (some tests)
 colors_by_layer = {
     'monolayer': np.array([0,163,255])/255.0, # Blue
     'bilayer': np.array([29,255,0])/255.0, # Green
@@ -37,13 +34,10 @@ colors_by_layer = {
     'bg': np.array([0, 0, 0])/255.0, # Uncolored
 }
 
-<<<<<<< HEAD
-=======
 # Crop Function
 def crop(input):
     return input[210:770, 400:1220]
 
->>>>>>> 673af25 (some tests)
 i = 0
 
 try:

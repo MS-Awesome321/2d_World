@@ -39,19 +39,16 @@ import cv2
 # x_motor.setup_velocity(max_velocity=20_000, acceleration=518_630)
 # print(x_motor.get_velocity_parameters())
 
-<<<<<<< HEAD
 # test_stage = Stage('', '', magnification=20, test_mode=True)
 # test_stage.set_chip_dims(50,50)
 # test_stage.set_direction(45)
 # coords = test_stage.get_snake()
 # coords = np.stack(coords, axis=0)
-=======
 test_stage = Stage('', '', magnification=20, test_mode=True)
 test_stage.set_chip_dims(50,50)
 test_stage.set_direction(45)
 coords = test_stage.get_snake()
 coords = np.stack(coords, axis=0)
->>>>>>> 673af25 (some tests)
 
 # plt.plot(coords[:,0], coords[:,1])
 # plt.show()

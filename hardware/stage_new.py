@@ -26,7 +26,7 @@ try:
 
     # test_stage.start_snake(TestSegment(photo_dir='photo_dir', filename='segment_img'))
     ps = PhotoShoot(photo_dir='photo_dir', wait=False)
-    test_stage.start_snake(ps.take_photo)
+    test_stage.start_snake([ps.take_photo])
 
 except KeyboardInterrupt:
     test_stage.stop()
