@@ -43,7 +43,7 @@ else:
 
 g1 = cv2.imread(f'../monolayerGraphene/monolayer_Graphene/{filename}')
 g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-shrink = 3
+shrink = 2
 g1 = cv2.resize(g1, (int(g1.shape[1]/shrink), int(g1.shape[0]/shrink)))
 
 # Initialize Segmenter
@@ -59,6 +59,12 @@ segmenter.label_masks()
 watch.clock()
 result = segmenter.prettify()
 watch.clock()
+
+# print(segmenter.avg_labs[247])
+# print(segmenter.mask_labels[247])
+# print(segmenter.mask_areas[247])
+# print(segmenter.avg_bg_lab)
+# print(segmenter.layer_labels)
 
 # Show Results
 fig, axs = plt.subplots(1, 4, figsize=(10,10))

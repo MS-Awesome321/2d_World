@@ -3,7 +3,7 @@ import numpy as np
 from scipy.ndimage import label
 
 class Segmenter():
-    def __init__(self, img, material, colors=None, numbers=None, min_area = 10, max_area = 1000000, magnification=100, k=3):
+    def __init__(self, img, material, colors=None, numbers=None, min_area = 10, max_area = 10000000, magnification=100, k=3):
         self.img = img
         self.size = img.shape[:2]
         self.target_bg_lab = material.target_bg_lab
@@ -25,7 +25,7 @@ class Segmenter():
         self.mask_ids, self.mask_areas = np.unique(self.masks, return_counts=True)
 
         # Get BG mask
-        self.bg_mask_id = np.argmax(self.mask_areas)
+        self.bg_mask_id = np.argmax(self.mask_areas[1:]) + 1
 
     def get_all_avg_lab(self):
         # Flatten masks and lab arrays
@@ -56,6 +56,8 @@ class Segmenter():
         self.layer_labels = new_layer_labels
         # Add bg lab
         self.layer_labels[tuple(self.avg_bg_lab)] = 'bg'
+        second_bg_lab = (self.avg_bg_lab[0] + 25, self.avg_bg_lab[1], self.avg_bg_lab[2])
+        self.layer_labels[second_bg_lab] = 'bg'
 
     def label_masks(self):
         self.adjust_layer_labels()

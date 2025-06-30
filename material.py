@@ -1,8 +1,8 @@
 from skimage.feature import canny
 from skimage.color import lab2rgb, rgb2gray, rgb2lab
-from skimage.filters.rank import entropy
+from skimage.filters.rank import entropy, gradient
 from skimage.filters import sobel, unsharp_mask
-from scipy.ndimage import gaussian_filter, gaussian_gradient_magnitude
+from scipy.ndimage import gaussian_filter, gaussian_gradient_magnitude, generic_filter
 from skimage.morphology import disk
 import numpy as np
 import cv2
@@ -122,6 +122,28 @@ def hessian_determinant(image, sigma=1):
     det_H = Ixx * Iyy - Ixy ** 2
     return det_H
 
+def opencv_rank_gradient(image, selem):
+    """
+    Mimics skimage.filters.rank.gradient using OpenCV and NumPy.
+
+    Args:
+        image (np.ndarray): Grayscale input image (uint8).
+        selem (np.ndarray): Structuring element (binary mask, e.g., from skimage.morphology.disk).
+
+    Returns:
+        np.ndarray: Gradient image (uint8).
+    """
+    # Ensure image is uint8
+    if image.dtype != np.uint8:
+        image = (255 * (image - np.min(image)) / (np.ptp(image) + 1e-8)).astype(np.uint8)
+
+    # Use OpenCV to compute local min and max
+    kernel = selem.astype(np.uint8)
+    local_max = cv2.dilate(image, kernel)
+    local_min = cv2.erode(image, kernel)
+    gradient = local_max - local_min
+    return gradient
+
 class EntropyEdgeMethod(EdgeMethod):
   def __init__(self, k=3, magnification=20, sigma=0, threshold=None):
     self.k = k
@@ -141,7 +163,7 @@ class EntropyEdgeMethod(EdgeMethod):
        percentile_threshold = 80
     else:
       disk_radius = 15
-      percentile_threshold = 40
+      percentile_threshold = 65
 
     footprint = disk(disk_radius)
 
@@ -197,8 +219,9 @@ wte2_labels = { # cielab colorspace
 wte2 = Material('WTe2', [58.50683594, 28.57762527, -2.79295444], layer_labels=wte2_labels)
 
 graphene_labels = { # cielab colorspace
-                  (51, 13, 1): 'monolayer',
-                  (47.5, 17, 3): 'bilayer',
+                  (51, 15, 1): 'monolayer',
+                  (49, 14, 5): 'monolayer',
+                  (47.5, 16, 0): 'bilayer',
                   (37, 31, -2): 'trilayer',
                   (30, 30, -27): 'fewlayer',
                   (50, 0, -15): 'manylayer',
