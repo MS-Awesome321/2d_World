@@ -8,6 +8,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from search_utils import PhotoShoot, AutoFocus
 import cv2
+import subprocess
+import time
+import os
+from PIL import Image
+import pyautogui as pag
 
 # turret = Turret('COM8')
 # print(turret.rotate_to_position(int(sys.argv[1])))
@@ -44,11 +49,11 @@ import cv2
 # test_stage.set_direction(45)
 # coords = test_stage.get_snake()
 # coords = np.stack(coords, axis=0)
-test_stage = Stage('', '', magnification=20, test_mode=True)
-test_stage.set_chip_dims(50,50)
-test_stage.set_direction(45)
-coords = test_stage.get_snake()
-coords = np.stack(coords, axis=0)
+# test_stage = Stage('', '', magnification=20, test_mode=True)
+# test_stage.set_chip_dims(50,50)
+# test_stage.set_direction(45)
+# coords = test_stage.get_snake()
+# coords = np.stack(coords, axis=0)
 
 # plt.plot(coords[:,0], coords[:,1])
 # plt.show()
@@ -64,5 +69,33 @@ coords = np.stack(coords, axis=0)
 # plt.imshow(img)
 # plt.show()
 
-af = AutoFocus('COM7')
-af()
+# af = AutoFocus('photo_dir', 'COM7')
+# af()
+
+# gp_shell = subprocess.Popen(
+#             ['gphoto2', '--shell'],
+#             shell=True,
+#             stdin=subprocess.PIPE,
+#             stdout=subprocess.PIPE,
+#             stderr=subprocess.STDOUT,
+#             universal_newlines=True,
+#             bufsize=1
+#         )
+
+# gp_shell.stdin.write('lcd photo_dir \n')
+
+
+# for i in range(15):
+#     if i%5 == 0:
+#         for j in range(5):
+#             gp_shell.stdin.write('capture-preview \n')
+#             while not os.path.isfile('C:/Users/PHY-Wulabmobile1/Desktop/test/2d_World/hardware/photo_dir/capture_preview.jpg'):
+#                 time.sleep(0.05)
+#             img = Image.open('C:/Users/PHY-Wulabmobile1/Desktop/test/2d_World/hardware/photo_dir/capture_preview.jpg')
+#             img = np.array(img)
+#             print(img)
+#             os.remove('C:/Users/PHY-Wulabmobile1/Desktop/test/2d_World/hardware/photo_dir/capture_preview.jpg')
+#     gp_shell.stdin.write('capture-image-and-download \n')
+
+pag.leftClick(1776, 280)
+pag.leftClick(1776, 280)

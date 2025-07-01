@@ -36,17 +36,17 @@ try:
             elif score < 2.5:
                 focus_speed = 100
             elif score < 3:
-                focus_speed = 50
-            elif score < 3.5:
                 focus_speed = 25
+            elif score < 3.5:
+                focus_speed = 12.5
             elif score < 4.25:
-                focus_speed = 10
-            elif score < 4.5:
                 focus_speed = 5
+            elif score < 4.5:
+                focus_speed = 2.5
             else:
                 focus_speed = 0
 
-            focus.rotate_relative(direction*focus_speed)
+            focus.rotate_relative(direction * focus_speed)
             time.sleep(0.008 * focus_speed)
         prev_score = score
         
