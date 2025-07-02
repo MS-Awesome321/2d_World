@@ -25,6 +25,7 @@ to_check = []
 checked = []
 photo_dir = 'C:/Users/PHY-Wulabmobile1/Desktop/test/2d_World/hardware/photo_dir'
 min_blur = 3
+delete = False
 
 try:
     cv2.namedWindow("Live Segmentation Demo", cv2.WINDOW_NORMAL)
@@ -60,7 +61,7 @@ try:
                 
 
                 # Initialize Segmenter
-                segmenter = Segmenter(input, graphene, colors=colors_by_layer, magnification=20, k=2, min_area=200)
+                segmenter = Segmenter(input, graphene, colors=colors_by_layer, magnification=20, k=3, min_area=200)
 
 
                 # Run Segmenter
@@ -75,6 +76,10 @@ try:
 
                 # NEVER REMOVE
                 cv2.waitKey(1)
+        
+        if len(checked) > 0 and delete:
+            for filename in checked:
+                os.remove(f'{photo_dir}/{filename}')
 
 except KeyboardInterrupt:
     # graceful exit
