@@ -77,10 +77,16 @@ class Focus:
         checksum = self.calculate_checksum(cmd)
         cmd.append(checksum)
         response = self.send_command(cmd)
-        self.position -= dist
+        if abs(dist) <= 2000:
+            self.position -= dist
         return self.position
 
     def get_pos(self):
+        return self.position
+    
+    def move_to(self, target):
+        if abs(self.position - target) <= 2000:
+            self.rotate_relative(self.position - target)
         return self.position
 
     def set_zero(self):
@@ -90,7 +96,7 @@ class Focus:
     def home(self):
         self.rotate_relative(self.position)
 
-    def emergencystop(self):
+    def stop(self):
         value_bytes = self.um2byte(0)
         cmd = self.start_command(value_bytes, stop=1)
         checksum = self.calculate_checksum(cmd)

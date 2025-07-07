@@ -1,7 +1,8 @@
 from pylablib.devices import Thorlabs
 import numpy as np
 import time
-
+from tqdm import tqdm
+from focus import Focus
 
 class Stage:
     """
@@ -20,7 +21,7 @@ class Stage:
     # ------------------------------------------------------------------ #
     # Construction / setup helpers
     # ------------------------------------------------------------------ #
-    def __init__(self, serial_num_x, serial_num_y, magnification=20, test_mode = False):
+    def __init__(self, serial_num_x, serial_num_y, focus_comport=None, magnification=20, test_mode = False):
         if not test_mode:
             self.motors = []
             self.default_speeds= []
@@ -37,6 +38,15 @@ class Stage:
                 self.default_speeds.append(self.y_motor.get_jog_parameters().max_velocity // 4)
             except:
                 print('Could not mount Y motor')
+
+            try:
+                if focus_comport is not None:
+                    self.focus_motor = Focus(focus_comport)
+                    self.motors.append(self.focus_motor)
+                else:
+                    self.focus_motor = None
+            except:
+                print('Could not mount focus motor.')
 
         # pick the correct row spacing for the chosen objective
         try:
@@ -58,7 +68,9 @@ class Stage:
         if coords is None:
             self.home_location = np.array(
                 [self.x_motor.get_position(),
-                 self.y_motor.get_position()], 
+                 self.y_motor.get_position(),
+                 0
+                ], 
                  dtype=float
             )
         elif len(coords) == 2:
@@ -102,27 +114,46 @@ class Stage:
         self.motors[motor].setup_jog(max_velocity=new_speed)
         return True
 
-    def get_snake(self):
+    def get_snake(self, z_corners=[0, 0, 0]):
+        """
+        Generate a snake scan path over the chip, assigning each point a z-coordinate
+        interpolated from three corners: [bottom_left, top_left, top_right], with the origin (0,0,0)
+        at the bottom right. The first coordinate is always (0,0,0) + self.home_location.
+        The surface is bilinearly interpolated, so it can be saddle-like.
+        z_corners: [bottom_left, top_left, top_right]
+        """
         if None in (self.long_edge, self.short_edge):
             raise RuntimeError("Call `set_chip_dims` before `start_snake`")
 
         coords = []
         n_rows = int(self.short_edge // self.short_edge_dist) + 1
-        n_cols = int(self.long_edge // self.short_edge_dist) + 1  # Number of points along long edge
+        n_cols = int(self.long_edge // self.short_edge_dist) + 1
 
+        bl, tl, tr = z_corners
+        br = 0  # bottom right is always 0
+
+        # Bilinear interpolation for z
         for i in range(n_rows):
+            y_frac = i / (n_rows - 1) if n_rows > 1 else 0
             y_local = self.short_edge_dist * i
-
-            # Generate points spaced self.short_edge_dist apart along the long edge
-            row_points = [np.array([self.short_edge_dist * j, y_local], dtype=float) for j in range(n_cols)]
-
+            row = []
+            for j in range(n_cols):
+                x_frac = j / (n_cols - 1) if n_cols > 1 else 0
+                x_local = j * self.long_edge / (n_cols - 1)
+                # Bilinear interpolation using the three provided corners and br=0
+                z = (
+                    br * (1 - x_frac) * (1 - y_frac) +
+                    bl * x_frac * (1 - y_frac) +
+                    tl * x_frac * y_frac +
+                    tr * (1 - x_frac) * y_frac
+                )
+                p = np.array([x_local, y_local], dtype=float)
+                p_world = self.rotation_matrix @ p + self.home_location[:2]
+                row.append(np.append(p_world, z))
             # even rows: left→right; odd rows: right→left
             if i % 2 == 1:
-                row_points = row_points[::-1]
-
-            for p in row_points:
-                p_world = self.rotation_matrix @ p + self.home_location
-                coords.append(p_world)
+                row = row[::-1]
+            coords.extend(row)
 
         return coords
 
@@ -132,19 +163,21 @@ class Stage:
     def _placeholder():
         pass
 
-    def start_snake(self, methods=[_placeholder]):
+    def start_snake(self, z_corners=[0,0,0,0], methods=[_placeholder]):
         """
         Perform the raster scan.
         """
         
-        coords = self.get_snake()
+        coords = self.get_snake(z_corners)
 
         # execute the moves
-        for x, y in coords:       # only x and y
+        for x, y, z in tqdm(coords):
             self.x_motor.move_to(x)
             self.y_motor.move_to(y)
             self.x_motor.wait_for_stop()
             self.y_motor.wait_for_stop()
+            if self.focus_motor is not None:
+                self.focus_motor.move_to(z)
             for method in methods:
                 method()
 
@@ -163,6 +196,13 @@ class Stage:
             motor.wait_for_stop()
         
         return True
+    
+    def move_to(self, location):
+        for i in range(len(location)):
+            self.motors[i].move_to(location[i])
+
+    def move_home(self):
+        self.move_to(self.home_location)
     
     # Manually Control Motors
     def start_manual_control(self, stop='esc', focus_comport=None, turret_comport=None):
@@ -223,9 +263,11 @@ class Stage:
                 if key.name == '=':
                     focus.rotate_relative(focus_speed)
                     time.sleep(0.0075 * focus_speed)
+                    print(focus.get_pos())
                 elif key.name == '-':
                     focus.rotate_relative(-1*focus_speed)
                     time.sleep(0.0075 * focus_speed)
+                    print(focus.get_pos())
                 elif key.name == '0':
                     if focus_speed < 2000:
                         focus_speed += 5

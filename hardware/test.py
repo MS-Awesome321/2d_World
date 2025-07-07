@@ -44,19 +44,19 @@ import pyautogui as pag
 # x_motor.setup_velocity(max_velocity=20_000, acceleration=518_630)
 # print(x_motor.get_velocity_parameters())
 
-# test_stage = Stage('', '', magnification=20, test_mode=True)
-# test_stage.set_chip_dims(50,50)
-# test_stage.set_direction(45)
-# coords = test_stage.get_snake()
-# coords = np.stack(coords, axis=0)
-# test_stage = Stage('', '', magnification=20, test_mode=True)
-# test_stage.set_chip_dims(50,50)
-# test_stage.set_direction(45)
-# coords = test_stage.get_snake()
-# coords = np.stack(coords, axis=0)
+test_stage = Stage('', '', magnification=20, test_mode=True)
+test_stage.set_chip_dims(7,7)
+test_stage.set_direction(180)
+z_plane = [-3000, -3800, -1200]
+coords = test_stage.get_snake(z_plane)
+coords = np.stack(coords, axis=0)
 
-# plt.plot(coords[:,0], coords[:,1])
-# plt.show()
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.plot(coords[:,0], coords[:,1], coords[:,2], '-r')
+ax.scatter(coords[0,0], coords[0,1], coords[0,2], color='green', s=60, label='Start')
+ax.legend()
+plt.show()
     
 
 # ps_test = PhotoShoot(photo_dir='photo_dir')
@@ -100,8 +100,8 @@ import pyautogui as pag
 # pag.leftClick(1776, 280)
 # pag.leftClick(1776, 280)
 
-pag.leftClick(1794, 230)
-pag.leftClick(1794, 230)
+# pag.leftClick(1794, 230)
+# pag.leftClick(1794, 230)
 
 # while True:
 #     print(pag.displayMousePosition())

@@ -22,7 +22,7 @@ class WF():
         self.mp = mercy_pause
         self.min_colors = min_colors
 
-    def color_count_score(img, bins=16, shrink = 4):
+    def color_count_score(self, img, bins=16, shrink = 4):
         """
         Estimates the amount of different colors in an RGB image.
         The score increases as the number of distinct colors increases.
@@ -40,7 +40,7 @@ class WF():
         i = 0
         take_pic = True
         if self.counter % self.mp == 0:
-            w_f = 5*self.wait_frames
+            w_f = 2*self.wait_frames
             mercy_pause = True
         else:
             w_f = self.wait_frames
@@ -55,8 +55,9 @@ class WF():
             # Compute Blur Score
             score = cv2.Laplacian(frame, cv2.CV_32FC1).var()
             score = np.log(score)
-            print(score)
+            # print(score)
             colors = self.color_count_score(frame, bins=4)
+            # print(colors)
             i+=1
 
             if colors < self.min_colors and not(mercy_pause):

@@ -8,7 +8,7 @@ import os
 x = '27503936'
 y = '27503951'
 
-test_stage = Stage(x, y, 20)
+test_stage = Stage(x, y, focus_comport='COM5', magnification=20)
 
 try:
     test_stage.set_direction(180)
@@ -26,11 +26,15 @@ try:
     # plt.show()
 
     # test_stage.start_snake(TestSegment(photo_dir='photo_dir', filename='segment_img'))
-    wf = WF(min_blur = 3.5, wait_frames=35, absolute_min_blur=2)
-    test_stage.start_snake([wf.wait_focus_and_click])
+    wf = WF(min_blur = 3.5, wait_frames=50, min_colors=12)
+    # test_stage.start_snake([wf.wait_focus_and_click])
+    z_corners = [-3000, -3900, -1200]
+    test_stage.start_snake(z_corners)
 
-except KeyboardInterrupt:
+
+except Exception:
     test_stage.stop()
+    test_stage.move_home()
     print('Stopped Motion.')
 
 

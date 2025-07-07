@@ -32,9 +32,9 @@ try:
             if score < prev_score:
                 direction *= -1
             if score < 2:
-                focus_speed = 200
+                focus_speed = 75
             elif score < 2.5:
-                focus_speed = 100
+                focus_speed = 50
             elif score < 3:
                 focus_speed = 25
             elif score < 3.5:
