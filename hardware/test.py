@@ -97,5 +97,12 @@ import pyautogui as pag
 #             os.remove('C:/Users/PHY-Wulabmobile1/Desktop/test/2d_World/hardware/photo_dir/capture_preview.jpg')
 #     gp_shell.stdin.write('capture-image-and-download \n')
 
-pag.leftClick(1776, 280)
-pag.leftClick(1776, 280)
+# pag.leftClick(1776, 280)
+# pag.leftClick(1776, 280)
+
+pag.leftClick(1794, 230)
+pag.leftClick(1794, 230)
+
+# while True:
+#     print(pag.displayMousePosition())
+#     time.sleep(0.05)

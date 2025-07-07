@@ -9,7 +9,6 @@ x = '27503936'
 y = '27503951'
 
 test_stage = Stage(x, y, 20)
-os.chdir('C:/Users/PHY-Wulabmobile1/Desktop/test/2d_World/hardware')
 
 try:
     test_stage.set_direction(180)
@@ -27,7 +26,7 @@ try:
     # plt.show()
 
     # test_stage.start_snake(TestSegment(photo_dir='photo_dir', filename='segment_img'))
-    wf = WF(min_blur = 3.5, wait_frames=35)
+    wf = WF(min_blur = 3.5, wait_frames=35, absolute_min_blur=2)
     test_stage.start_snake([wf.wait_focus_and_click])
 
 except KeyboardInterrupt:

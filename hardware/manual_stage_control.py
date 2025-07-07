@@ -11,7 +11,7 @@ test_stage.y_motor.setup_velocity(max_velocity=100_000, acceleration=700_000)
 try:
     print('Starting Manual Motor Control')
     print('Press q to end Manual Motor Control')
-    if test_stage.start_manual_control('q', focus_comport=None, turret_comport='COM8'):
+    if test_stage.start_manual_control('q', focus_comport='COM5', turret_comport='COM7'):
         print('Ended manual control mode.')
 
 except KeyboardInterrupt:

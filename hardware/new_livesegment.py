@@ -1,7 +1,7 @@
 import sys
 import cv2
 import numpy as np
-sys.path.append('C:/Users/PHY-Wulabmobile1/Desktop/test/2d_World/')
+sys.path.append('C:/Users/admin/Desktop/2d_World/')
 from segmenter2 import Segmenter
 from material import wte2, graphene
 import time
@@ -23,13 +23,13 @@ colors_by_layer = {
 
 to_check = []
 checked = []
-photo_dir = 'C:/Users/PHY-Wulabmobile1/Desktop/test/2d_World/hardware/photo_dir'
+photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir'
 min_blur = 3
 
 try:
     cv2.namedWindow("Live Segmentation Demo", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("Live Segmentation Demo", 720, 480)
-    cv2.moveWindow("Live Segmentation Demo", 1050, 500)
+    cv2.resizeWindow("Live Segmentation Demo", 960, 640)
+    cv2.moveWindow("Live Segmentation Demo", 900, -900)
     
     while True:
         for filename in os.listdir(photo_dir):
@@ -60,7 +60,7 @@ try:
                 
 
                 # Initialize Segmenter
-                segmenter = Segmenter(input, graphene, colors=colors_by_layer, magnification=20, k=2, min_area=200)
+                segmenter = Segmenter(input, graphene, colors=colors_by_layer, magnification=20, k=3, min_area=200)
 
 
                 # Run Segmenter

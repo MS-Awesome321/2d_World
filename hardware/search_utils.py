@@ -5,12 +5,73 @@ import os
 import cv2
 from focus import Focus
 import sys
-sys.path.append('C:/Users/PHY-Wulabmobile1/Desktop/test/2d_World/')
+sys.path.append('C:/Users/admin/Desktop/2d_World/')
 from segmenter2 import Segmenter
 from material import wte2, graphene, EntropyEdgeMethod
 from PIL import ImageGrab, Image
 import pyautogui as pag
 import keyboard
+
+
+
+class WF():
+    def __init__(self, min_blur, wait_frames, mercy_pause=7, min_colors=4):
+        self.min_blur = min_blur
+        self.wait_frames = wait_frames
+        self.counter = 0
+        self.mp = mercy_pause
+        self.min_colors = min_colors
+
+    def color_count_score(img, bins=16, shrink = 4):
+        """
+        Estimates the amount of different colors in an RGB image.
+        The score increases as the number of distinct colors increases.
+        """
+
+        img = cv2.resize(img, (int(img.shape[1]/shrink), int(img.shape[0]/shrink)), cv2.INTER_NEAREST)
+        pixels = img.reshape(-1, 3)
+        quantized = (pixels // (256 // bins)).astype(np.uint8)
+        unique_colors = np.unique(quantized, axis=0)
+        
+        return len(unique_colors)
+
+    def wait_focus_and_click(self):
+        score = 0
+        i = 0
+        take_pic = True
+        if self.counter % self.mp == 0:
+            w_f = 5*self.wait_frames
+            mercy_pause = True
+        else:
+            w_f = self.wait_frames
+            mercy_pause = False
+
+        while score < self.min_blur and i < w_f:
+            if keyboard.is_pressed('q'):
+                raise KeyboardInterrupt
+            frame =  np.array(ImageGrab.grab(bbox=(200,200,960,640)))
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+            # Compute Blur Score
+            score = cv2.Laplacian(frame, cv2.CV_32FC1).var()
+            score = np.log(score)
+            print(score)
+            colors = self.color_count_score(frame, bins=4)
+            i+=1
+
+            if colors < self.min_colors and not(mercy_pause):
+                take_pic = False
+                break
+
+        if take_pic:
+            # pag.leftClick(1776, 280)
+            pag.leftClick(1794, 230)
+            # print('POP')
+        time.sleep(0.05)
+        self.counter += 1
+
+
+# Old stuff
 
 colors_by_layer = {
     'monolayer': np.array([0,163,255])/255.0,
@@ -278,27 +339,3 @@ class Shoot_Focus():
         # Actual Image Capture
         self.gp_shell.stdin.write('capture-image-and-download \n')
         time.sleep(0.2)
-
-class WF():
-    def __init__(self, min_blur, wait_frames):
-        self.min_blur = min_blur
-        self.wait_frames = wait_frames
-
-    def wait_focus_and_click(self):
-        score = 0
-        i = 0
-        while score < self.min_blur and i < self.wait_frames:
-            if keyboard.is_pressed('q'):
-                raise KeyboardInterrupt
-            frame =  np.array(ImageGrab.grab(bbox=(200,200,960,640)))
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-            # Compute Blur Score
-            score = cv2.Laplacian(frame, cv2.CV_32FC1).var()
-            score = np.log(score)
-            print(score)
-            i+=1
-
-        pag.leftClick(1776, 280)
-        # print('POP')
-        time.sleep(0.25)

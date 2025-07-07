@@ -10,7 +10,7 @@ fontScale = 1
 color = (255, 0, 0)
 thickness = 2
 
-focus = Focus('COM7')
+focus = Focus('COM5')
 focus_speed = 5
 min_blur = 4.75
 prev_score = None
