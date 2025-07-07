@@ -25,6 +25,7 @@ to_check = []
 checked = []
 photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir'
 min_blur = 3
+delete = False
 
 try:
     cv2.namedWindow("Live Segmentation Demo", cv2.WINDOW_NORMAL)
@@ -75,6 +76,10 @@ try:
 
                 # NEVER REMOVE
                 cv2.waitKey(1)
+        
+        if len(checked) > 0 and delete:
+            for filename in checked:
+                os.remove(f'{photo_dir}/{filename}')
 
 except KeyboardInterrupt:
     # graceful exit
