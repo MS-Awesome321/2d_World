@@ -45,8 +45,10 @@ class Stage:
                     self.motors.append(self.focus_motor)
                 else:
                     self.focus_motor = None
-            except:
+            except Exception as e:
                 print('Could not mount focus motor.')
+                print(focus_comport)
+                print(e)
 
         # pick the correct row spacing for the chosen objective
         try:
@@ -127,7 +129,10 @@ class Stage:
 
         coords = []
         n_rows = int(self.short_edge // self.short_edge_dist) + 1
-        n_cols = int(self.long_edge // self.short_edge_dist) + 1
+        n_cols = int(self.long_edge // self.short_edge_dist)
+
+        self.n_rows = n_rows
+        self.n_cols = n_cols
 
         bl, tl, tr = z_corners
         br = 0  # bottom right is always 0
@@ -163,7 +168,7 @@ class Stage:
     def _placeholder():
         pass
 
-    def start_snake(self, z_corners=[0,0,0,0], methods=[_placeholder]):
+    def start_snake(self, z_corners=[0,0,0], wf=None, methods=[_placeholder]):
         """
         Perform the raster scan.
         """
@@ -178,6 +183,9 @@ class Stage:
             self.y_motor.wait_for_stop()
             if self.focus_motor is not None:
                 self.focus_motor.move_to(z)
+            
+            if wf is not None:
+                wf(self.focus_motor, self.n_cols)
             for method in methods:
                 method()
 

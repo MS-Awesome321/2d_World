@@ -69,10 +69,11 @@ try:
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         # Compute Score
-        score = color_count_score(frame, bins=4)
+        # score = color_count_score(frame, bins=4)
+        score = blur_score(frame)
 
         # Overlay Text
-        frame = cv2.putText(frame, 'Color Score = '+str(score), org, font, fontScale, color, thickness, cv2.LINE_AA)
+        frame = cv2.putText(frame, 'Score = '+str(score), org, font, fontScale, color, thickness, cv2.LINE_AA)
 
         cv2.imshow('Python View', frame)
 

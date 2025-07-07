@@ -26,10 +26,9 @@ try:
     # plt.show()
 
     # test_stage.start_snake(TestSegment(photo_dir='photo_dir', filename='segment_img'))
-    wf = WF(min_blur = 3.5, wait_frames=50, min_colors=12)
-    # test_stage.start_snake([wf.wait_focus_and_click])
-    z_corners = [-3000, -3900, -1200]
-    test_stage.start_snake(z_corners)
+    wf = WF(min_blur = 3.5, take_pic=False, min_colors=12)
+    z_corners = [-3100, -1550, 1600]
+    test_stage.start_snake(z_corners=z_corners, wf = wf.wait_focus_and_click)
 
 
 except Exception:

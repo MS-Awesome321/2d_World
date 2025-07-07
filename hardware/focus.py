@@ -103,6 +103,9 @@ class Focus:
         cmd.append(checksum)
         response = self.send_command(cmd)
         return response
+    
+    def __del__(self):
+        self.serial_port.close()
 
 # Example usage:
 # fc = FocusControl()
