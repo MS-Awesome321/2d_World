@@ -8,7 +8,7 @@ import sys
 sys.path.append('C:/Users/admin/Desktop/2d_World/')
 from segmenter2 import Segmenter
 from material import wte2, graphene, EntropyEdgeMethod
-from autofocus import autofocus
+from autofocus import autofocus, color_count_score
 from PIL import ImageGrab, Image
 import pyautogui as pag
 import keyboard
@@ -22,21 +22,42 @@ class WF():
         self.counter = 0
         self.mp = mercy_pause
         self.min_colors = min_colors
+        # cv2.namedWindow("Python View", cv2.WINDOW_NORMAL)
+        # cv2.resizeWindow("Python View", 960, 320)
+        # cv2.moveWindow("Python View", 900, -900)
 
     def wait_focus_and_click(self, focus_motor=None, n_cols=50):
         if keyboard.is_pressed('q'):
             raise KeyboardInterrupt
 
-        if (self.counter % n_cols == int(n_cols/2)):
+        time.sleep(0.25)
+        if (self.counter % n_cols == n_cols//4 or self.counter % n_cols == 3*n_cols//4):
             temp = focus_motor.get_pos()
-            autofocus(auto_stop=True, focus=focus_motor)
+            autofocus(auto_stop=True, focus=focus_motor, timeup=30)
             focus_motor.position = temp
 
         if self.take_pic:
-            # pag.leftClick(1776, 280)
-            pag.leftClick(1794, 230)
-            # print('POP')
-        time.sleep(0.05)
+            bgr_frame =  np.array(ImageGrab.grab(bbox=(200,200,960,640)))
+            frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
+            score = color_count_score(frame, bins=4)
+            # print()
+            # print(score)
+
+            if score >= 14:
+                # pag.leftClick(1776, 280)
+                # pag.leftClick(1776, 230)
+                # time.sleep(0.45)
+                # print('POP')
+
+                # grow = 2
+                # frame = cv2.resize(frame, (int(frame.shape[1]*grow), int(frame.shape[0]*grow)), cv2.INTER_NEAREST)
+                # output = cv2.cvtColor((255*EntropyEdgeMethod(magnification=20, k=3)(frame)).astype('uint8'), cv2.COLOR_RGB2BGR)
+                # shown = np.concatenate((output, frame), axis=1)
+                # cv2.imshow('Python View', shown)
+
+                cv2.imwrite(f'test_{self.counter}.jpg', frame)
+                cv2.waitKey(1)
+
         self.counter += 1
 
 

@@ -13,9 +13,9 @@ class Stage:
     _ROW_SPACING_UM = {
         100: 2_550,   # 255 µm × 1000 for Kinesis' nm units
         50:  5_100,
-        20: 16_400,
-        10: 25_200,
-        5: 50_400,
+        20: 27_000,
+        10: 50_400,
+        5: 100_800,
     }
 
     # ------------------------------------------------------------------ #
@@ -128,7 +128,7 @@ class Stage:
             raise RuntimeError("Call `set_chip_dims` before `start_snake`")
 
         coords = []
-        n_rows = int(self.short_edge // self.short_edge_dist) + 1
+        n_rows = int(self.short_edge // self.short_edge_dist)
         n_cols = int(self.long_edge // self.short_edge_dist)
 
         self.n_rows = n_rows
@@ -208,6 +208,7 @@ class Stage:
     def move_to(self, location):
         for i in range(len(location)):
             self.motors[i].move_to(location[i])
+            time.sleep(0.05)
 
     def move_home(self):
         self.move_to(self.home_location)

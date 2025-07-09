@@ -84,9 +84,12 @@ class Focus:
     def get_pos(self):
         return self.position
     
-    def move_to(self, target):
-        if abs(self.position - target) <= 2000:
-            self.rotate_relative(self.position - target)
+    def move_to(self, target, wait=False):
+        dist = self.position - target
+        if abs(dist) <= 2000:
+            self.rotate_relative(dist)
+            if wait:
+                time.sleep(0.0055 * abs(dist))
         return self.position
 
     def set_zero(self):
@@ -106,6 +109,9 @@ class Focus:
     
     def __del__(self):
         self.serial_port.close()
+
+    def wait_for_stop(self):
+        return True
 
 # Example usage:
 # fc = FocusControl()
