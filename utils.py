@@ -1,6 +1,7 @@
 import time
 import numpy as np
 from skimage.color import lab2rgb, rgb2gray, rgb2lab
+from skimage.morphology import disk
 
 def lab_separate(img, l_factor = 1, l_midpoint=50, a_factor = 1, a_midpoint=50, b_factor = 1, b_midpoint = 50):
     lab = rgb2lab(img)
@@ -72,3 +73,16 @@ class Stopwatch():
             current = time.time()
             print(current - self.prev)
             self.prev = current
+
+def focus_disk(img, radius=200, invert=False):
+    d = disk(radius)
+    d = d[radius - img.shape[0]//2 : radius + img.shape[0]//2, :]
+    pad = np.zeros((img.shape[0], img.shape[1]//2 - radius))
+    d = np.concatenate([d, pad], axis=1)
+    d = np.concatenate([pad, d], axis=1)  
+    d = d[:, 0:img.shape[1]]
+
+    if invert:
+        return np.logical_not(d)
+    else:
+        return d

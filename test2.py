@@ -6,7 +6,7 @@ import os
 from segmenter2 import Segmenter
 from material import graphene
 import warnings
-from utils import Stopwatch
+from utils import Stopwatch, focus_disk
 
 watch = Stopwatch()
 
@@ -43,8 +43,10 @@ else:
 
 g1 = cv2.imread(f'../monolayerGraphene/monolayer_Graphene/{filename}')
 g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-shrink = 2
+shrink = 0.25
 g1 = cv2.resize(g1, (int(g1.shape[1]/shrink), int(g1.shape[0]/shrink)))
+f = focus_disk(g1, 1150, invert=True)
+g1[f] = 0
 
 # Initialize Segmenter
 watch.clock()
