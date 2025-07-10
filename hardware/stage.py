@@ -168,7 +168,7 @@ class Stage:
     def _placeholder():
         pass
 
-    def start_snake(self, z_corners=[0,0,0], wf=None, methods=[_placeholder]):
+    def start_snake(self, z_corners=[0,0,0], wf=None, opt=None, methods=[_placeholder]):
         """
         Perform the raster scan.
         """
@@ -186,6 +186,8 @@ class Stage:
             
             if wf is not None:
                 wf(self.focus_motor, self.n_cols)
+            if opt is not None:
+                opt((x,y,z), self.focus_motor)
             for method in methods:
                 method()
 

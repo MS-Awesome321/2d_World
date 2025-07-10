@@ -41,19 +41,18 @@ elif 'M5' in filename:
 else:
     magnification = 20
 
-g1 = cv2.imread(f'../monolayerGraphene/monolayer_Graphene/{filename}')
+g1 = cv2.imread(f'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/{filename}')
 g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
 shrink = 0.25
 g1 = cv2.resize(g1, (int(g1.shape[1]/shrink), int(g1.shape[0]/shrink)))
-f = focus_disk(g1, 1150, invert=True)
-g1[f] = 0
+f = focus_disk(g1, 1100, invert=True)
 
 # Initialize Segmenter
 watch.clock()
 segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=magnification)
 print(segmenter.edge_method.mag)
 watch.clock()
-segmenter.make_masks()
+segmenter.make_masks(black_zone_mask=f)
 watch.clock()
 segmenter.get_all_avg_lab()
 watch.clock()
@@ -62,14 +61,15 @@ watch.clock()
 result = segmenter.prettify()
 watch.clock()
 
-# print(segmenter.avg_labs[247])
-# print(segmenter.mask_labels[247])
-# print(segmenter.mask_areas[247])
+# i = 336
+# print(segmenter.avg_labs[i])
+# print(segmenter.mask_labels[i])
+# print(segmenter.mask_areas[i])
 # print(segmenter.avg_bg_lab)
 # print(segmenter.layer_labels)
 
 # Show Results
-fig, axs = plt.subplots(1, 4, figsize=(10,10))
+fig, axs = plt.subplots(1, 3, figsize=(10,10))
 
 axs[0].imshow(g1, cmap='inferno')
 axs[0].axis('off')
@@ -80,8 +80,8 @@ axs[1].axis('off')
 axs[2].imshow(segmenter.edges, cmap='inferno')
 axs[2].axis('off')
 
-axs[3].imshow(segmenter.masks, cmap='inferno')
-axs[3].axis('off')
+# axs[3].imshow(segmenter.masks == segmenter.bg_mask_id, cmap='inferno')
+# axs[3].axis('off')
 
 plt.tight_layout()
 plt.show()

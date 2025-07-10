@@ -19,8 +19,10 @@ class Segmenter():
         self.lab[:,:,1] -= 128
         self.lab[:,:,2] -= 128
 
-    def make_masks(self):
+    def make_masks(self, black_zone_mask = None):
         self.edges = self.edge_method(self.img)
+        if black_zone_mask is not None:
+            self.edges[black_zone_mask] = 1
         self.masks, self.num_masks = label(np.logical_not(self.edges))
         self.mask_ids, self.mask_areas = np.unique(self.masks, return_counts=True)
 
@@ -82,8 +84,8 @@ class Segmenter():
                 label = layer_types[min_indices[idx]]
                 self.mask_labels.append(label)
 
-    def process_frame(self):
-        self.make_masks()
+    def process_frame(self, black_zone_mask=None):
+        self.make_masks(black_zone_mask)
         self.get_all_avg_lab()
         self.label_masks()
 

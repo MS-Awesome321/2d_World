@@ -14,8 +14,8 @@ try:
     test_stage.set_direction(180)
     test_stage.set_home()
     test_stage.set_chip_dims(6.5, 6.75)
-    test_stage.x_motor.setup_velocity(max_velocity=500_000, acceleration=1_000_000)
-    test_stage.y_motor.setup_velocity(max_velocity=500_000, acceleration=1_000_000)
+    test_stage.x_motor.setup_velocity(max_velocity=500_000, acceleration=4_000_000)
+    test_stage.y_motor.setup_velocity(max_velocity=500_000, acceleration=4_000_000)
 
     # coords = test_stage.get_snake()
     # coords = np.stack(coords, axis=0)c

@@ -159,8 +159,8 @@ class EntropyEdgeMethod(EdgeMethod):
     input = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     sections = subdivide(input, self.k)
     if self.mag <= 20:
-       disk_radius = 4
-       percentile_threshold = 80
+       disk_radius = 2
+       percentile_threshold = 85
     else:
       disk_radius = 15
       percentile_threshold = 65

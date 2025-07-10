@@ -24,19 +24,15 @@ def color_count_score(img, bins=16, shrink = 4):
     
     return len(unique_colors)
 
-def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2):
+def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2, direction = 1):
     focus_speed = 5
     prev_score = None
-    direction = 1
     timer = 0
     ok_blur = 4.5
 
     while(True):        
         frame =  np.array(ImageGrab.grab(bbox=(200,200,960,640)))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-        if auto_stop and color_count_score(frame) < 12:
-            return True
         
         if q_stop and keyboard.is_pressed('q'):
             return True
@@ -62,15 +58,15 @@ def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2):
             if score < 2.25:
                 focus_speed = 100
             elif score < 2.5:
-                focus_speed = 50
+                focus_speed = 75
             elif score < 3:
-                focus_speed = 30
+                focus_speed = 50
             elif score < 3.5:
-                focus_speed = 15
+                focus_speed = 25
             elif score < 4.25:
-                focus_speed = 6
+                focus_speed = 12
             elif score < 4.5:
-                focus_speed = 1
+                focus_speed = 6
             else:
                 focus_speed = 0
                 if auto_stop:

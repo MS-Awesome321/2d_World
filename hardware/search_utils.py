@@ -14,6 +14,31 @@ import pyautogui as pag
 import keyboard
 
 
+class GetOptFocus():
+    def __init__(self, range):
+        self.range = range
+        os.chdir('C:/Users/admin/Desktop/2d_World/hardware/photo_dir')
+        self.data = []
+
+    def __call__(self, pos, focus_motor):
+        high_score = 0
+        high_i = None
+        start_pos = focus_motor.get_pos()
+
+        for i in self.range:
+            focus_motor.move_to(start_pos + i)
+            time.sleep(abs(0.0055 * i))
+            frame =  np.array(ImageGrab.grab(bbox=(200,200,960,640)))
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            score = cv2.Laplacian(frame, cv2.CV_32FC1).var()
+            score = np.log(score)
+            if score > high_score:
+                high_score = score
+                high_i = i
+
+        focus_motor.move_to(start_pos)
+        self.data.append((pos[0], pos[1], start_pos + high_i))
+
 
 class WF():
     def __init__(self, min_blur, take_pic = True, mercy_pause=7, min_colors=4):
@@ -25,16 +50,18 @@ class WF():
         # cv2.namedWindow("Python View", cv2.WINDOW_NORMAL)
         # cv2.resizeWindow("Python View", 960, 320)
         # cv2.moveWindow("Python View", 900, -900)
+        os.chdir('C:/Users/admin/Desktop/2d_World/hardware/photo_dir')
 
     def wait_focus_and_click(self, focus_motor=None, n_cols=50):
         if keyboard.is_pressed('q'):
             raise KeyboardInterrupt
 
-        time.sleep(0.25)
-        if (self.counter % n_cols == n_cols//4 or self.counter % n_cols == 3*n_cols//4):
-            temp = focus_motor.get_pos()
-            autofocus(auto_stop=True, focus=focus_motor, timeup=30)
-            focus_motor.position = temp
+        time.sleep(0.1)
+        # if (self.counter % 3 == 0):
+        temp = focus_motor.get_pos()
+        d = 1 if self.counter//n_cols % 2 == 0 else -1
+        autofocus(auto_stop=True, focus=focus_motor, timeup=5, direction=d)
+        focus_motor.position = temp
 
         if self.take_pic:
             bgr_frame =  np.array(ImageGrab.grab(bbox=(200,200,960,640)))
