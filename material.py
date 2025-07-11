@@ -159,8 +159,8 @@ class EntropyEdgeMethod(EdgeMethod):
     input = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     sections = subdivide(input, self.k)
     if self.mag <= 20:
-       disk_radius = 2
-       percentile_threshold = 85
+       disk_radius = 1
+       percentile_threshold = 80
     else:
       disk_radius = 15
       percentile_threshold = 65
@@ -168,7 +168,7 @@ class EntropyEdgeMethod(EdgeMethod):
     footprint = disk(disk_radius)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
-      futures = [executor.submit(entropy, section, footprint) for section in sections]
+      futures = [executor.submit(opencv_rank_gradient, section, footprint) for section in sections]
       entropied_sections = [f.result() for f in futures]
 
     entropied = combine_sections(entropied_sections, self.k)
@@ -225,10 +225,14 @@ graphene_labels = { # cielab colorspace
                   (37, 31, -2): 'trilayer',
                   (30, 30, -27): 'fewlayer',
                   (50, 0, -15): 'manylayer',
+                  (60, -10, 0): 'manylayer',
+                  (66, -7, 11): 'manylayer',
+                  (43.5, 8, 1): 'manylayer',
+                  (75, 0, 35): 'bulk',
                   (80, 5, 10): 'bulk',
-                  (53, -8, -12): 'bluish_layers',
-                  (50, 1, -10): 'bluish_layers',
+                  (50, 19, 22): 'bulk',
                   (48.1, 4.7, 10.4): 'dirt',
+                  (64, -4, 13): 'dirt',
                 #   (30, 20, -10): 'dirt',
                   (0,0,0): 'bg'
               }
