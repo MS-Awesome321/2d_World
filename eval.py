@@ -24,7 +24,7 @@ colors_by_layer = {
 
 # image_path = os.listdir("../monolayerGraphene/monolayer_Graphene/")[int(sys.argv[1])]
 
-files = os.listdir("C:/Users/admin/Desktop/2d_World/hardware/photo_dir")
+files = os.listdir("/Users/mayanksengupta/Desktop/2d_World/hardware/photo_dir")
 
 for filename in tqdm(files):
     # if 'M100' in filename:
@@ -46,17 +46,20 @@ for filename in tqdm(files):
     #     magnification = 20
     #     folder = 'M20'
 
-    g1 = cv2.imread(f'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/{filename}')
-    g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-    shrink = 0.25
-    g1 = cv2.resize(g1, (int(g1.shape[1]/shrink), int(g1.shape[0]/shrink)))
-    f = focus_disk(g1, 1100, invert=True)
+    g1 = cv2.imread(f'/Users/mayanksengupta/Desktop/2d_World/hardware/photo_dir/{filename}')
+    try:
+        g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
+        shrink = 0.25
+        g1 = cv2.resize(g1, (int(g1.shape[1]/shrink), int(g1.shape[0]/shrink)))
+        f = focus_disk(g1, int(275/shrink), invert=True)
 
-    # Initialize Segmenter
-    segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=20)
-    segmenter.process_frame(black_zone_mask=f)
-    result = segmenter.prettify()
-    result = (255 * result).astype(np.uint8)
-    result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
+        # Initialize Segmenter
+        segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=20, min_area=500)
+        segmenter.process_frame(black_zone_mask=f, segment_edges=True)
+        result = segmenter.prettify()
+        result = (255 * result).astype(np.uint8)
+        result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
 
-    cv2.imwrite(f'C:/Users/admin/Desktop/2d_World/hardware/results/{filename}', result)
+        cv2.imwrite(f'/Users/mayanksengupta/Desktop/2d_World/hardware/results/{filename}', result)
+    except:
+        print(f'{filename} corrupted')

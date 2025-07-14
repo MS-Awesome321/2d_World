@@ -59,7 +59,7 @@ watch.clock()
 result = segmenter.prettify()
 watch.clock()
 
-i = 17
+i = 22850
 if i <= segmenter.num_masks:
     print(segmenter.avg_labs[i])
     print(segmenter.mask_labels[i])

@@ -110,8 +110,8 @@ class Segmenter():
                 label = layer_types[min_indices[idx]]
                 self.mask_labels.append(label)
 
-    def process_frame(self, black_zone_mask=None):
-        self.make_masks(black_zone_mask)
+    def process_frame(self, black_zone_mask=None, segment_edges=False):
+        self.make_masks(black_zone_mask, segment_edges)
         self.get_all_avg_lab()
         self.label_masks()
 
