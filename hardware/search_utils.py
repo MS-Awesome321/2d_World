@@ -60,17 +60,17 @@ class WF():
         # if (self.counter % 3 == 0):
         temp = focus_motor.get_pos()
         d = 1 if self.counter//n_cols % 2 == 0 else -1
-        autofocus(auto_stop=True, focus=focus_motor, timeup=5, direction=d)
+        autofocus(auto_stop=True, focus=focus_motor, timeup=7, direction=d)
         focus_motor.position = temp
 
         if self.take_pic:
             bgr_frame =  np.array(ImageGrab.grab(bbox=(200,200,960,640)))
             frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
-            score = color_count_score(frame, bins=4)
+            # score = color_count_score(frame, bins=4)
             # print()
             # print(score)
 
-            if score >= 14:
+            # if score >= 14:
                 # pag.leftClick(1776, 280)
                 # pag.leftClick(1776, 230)
                 # time.sleep(0.45)
@@ -82,8 +82,8 @@ class WF():
                 # shown = np.concatenate((output, frame), axis=1)
                 # cv2.imshow('Python View', shown)
 
-                cv2.imwrite(f'test_{self.counter}.jpg', frame)
-                cv2.waitKey(1)
+        cv2.imwrite(f'test_{self.counter}.jpg', frame)
+        cv2.waitKey(1)
 
         self.counter += 1
 

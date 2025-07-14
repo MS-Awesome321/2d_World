@@ -14,8 +14,8 @@ try:
     test_stage.set_direction(180)
     test_stage.set_home()
     test_stage.set_chip_dims(6.5, 6.75)
-    test_stage.x_motor.setup_velocity(max_velocity=500_000, acceleration=4_000_000)
-    test_stage.y_motor.setup_velocity(max_velocity=500_000, acceleration=4_000_000)
+    test_stage.x_motor.setup_velocity(max_velocity=1_000_000, acceleration=1_000_000)
+    test_stage.y_motor.setup_velocity(max_velocity=1_000_000, acceleration=1_000_000)
 
     # coords = test_stage.get_snake()
     # coords = np.stack(coords, axis=0)c
@@ -27,7 +27,7 @@ try:
 
     # test_stage.start_snake(TestSegment(photo_dir='photo_dir', filename='segment_img'))
     wf = WF(min_blur = 3.5, take_pic=True, min_colors=12)
-    z_corners = [-2880, -2420, 540]
+    z_corners = [-2980, -3380, -470]
     # z_corners = [0,0,0]
     test_stage.start_snake(z_corners=z_corners, wf = wf.wait_focus_and_click)
     # test_stage.start_snake(z_corners=z_corners)
