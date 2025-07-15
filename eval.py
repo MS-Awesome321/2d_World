@@ -24,7 +24,10 @@ colors_by_layer = {
 
 # image_path = os.listdir("../monolayerGraphene/monolayer_Graphene/")[int(sys.argv[1])]
 
-files = os.listdir("/Users/mayanksengupta/Desktop/2d_World/hardware/photo_dir")
+files = os.listdir("C:/Users/admin/Desktop/2d_World/hardware/photo_dir")
+
+monolayer_sizes = np.array([])
+frame_nums = np.array([])
 
 for filename in tqdm(files):
     # if 'M100' in filename:
@@ -46,10 +49,10 @@ for filename in tqdm(files):
     #     magnification = 20
     #     folder = 'M20'
 
-    g1 = cv2.imread(f'/Users/mayanksengupta/Desktop/2d_World/hardware/photo_dir/{filename}')
+    g1 = cv2.imread(f'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/{filename}')
     try:
         g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-        shrink = 0.25
+        shrink = 0.5
         g1 = cv2.resize(g1, (int(g1.shape[1]/shrink), int(g1.shape[0]/shrink)))
         f = focus_disk(g1, int(275/shrink), invert=True)
 
@@ -60,6 +63,16 @@ for filename in tqdm(files):
         result = (255 * result).astype(np.uint8)
         result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
 
-        cv2.imwrite(f'/Users/mayanksengupta/Desktop/2d_World/hardware/results/{filename}', result)
+        cv2.imwrite(f'C:/Users/admin/Desktop/2d_World/hardware/results/{filename}', result)
+
+        mono_size = segmenter.largest_flakes('monolayer')
+        if 'test_' in filename:
+            i = int(filename[filename.index('_') + 1:filename.index('.')])
+            monolayer_sizes = np.concatenate((monolayer_sizes, mono_size))
+            frame_nums = np.concatenate((frame_nums, i*np.ones_like(mono_size)))
     except:
         print(f'{filename} corrupted')
+
+sorted_array = np.argsort(monolayer_sizes)[::-1]
+print(monolayer_sizes[sorted_array])
+print(frame_nums[sorted_array])

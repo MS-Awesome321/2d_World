@@ -56,11 +56,11 @@ class WF():
         if keyboard.is_pressed('q'):
             raise KeyboardInterrupt
 
-        time.sleep(0.1)
+        time.sleep(0.06)
         # if (self.counter % 3 == 0):
         temp = focus_motor.get_pos()
         d = 1 if self.counter//n_cols % 2 == 0 else -1
-        autofocus(auto_stop=True, focus=focus_motor, timeup=7, direction=d)
+        autofocus(auto_stop=True, focus=focus_motor, timeup=5, direction=d)
         focus_motor.position = temp
 
         if self.take_pic:
@@ -82,6 +82,7 @@ class WF():
                 # shown = np.concatenate((output, frame), axis=1)
                 # cv2.imshow('Python View', shown)
 
+        time.sleep(0.04)
         cv2.imwrite(f'test_{self.counter}.jpg', frame)
         cv2.waitKey(1)
 

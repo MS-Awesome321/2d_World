@@ -62,7 +62,7 @@ def color_count_score(img, bins=16, shrink = 4):
 try:
     cv2.namedWindow("Python View", cv2.WINDOW_NORMAL)
     # cv2.resizeWindow("Python View", 960, 640)
-    cv2.moveWindow("Python View", 900, -900)
+    cv2.moveWindow("Python View", 900, -1100)
 
     while(True):        
         frame =  np.array(ImageGrab.grab(bbox=(200,200,960,640)))

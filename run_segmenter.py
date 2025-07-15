@@ -39,9 +39,9 @@ elif 'M5' in filename:
 else:
     magnification = 20
 
-g1 = cv2.imread(f'/Users/mayanksengupta/Desktop/2d_World/hardware/photo_dir/{filename}')
+g1 = cv2.imread(f'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/{filename}')
 g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-shrink = 0.25
+shrink = 0.5
 g1 = cv2.resize(g1, (int(g1.shape[1]/shrink), int(g1.shape[0]/shrink)))
 f = focus_disk(g1, int(275/shrink), invert=True)
 
@@ -59,7 +59,7 @@ watch.clock()
 result = segmenter.prettify()
 watch.clock()
 
-i = 22850
+i = 12397
 if i <= segmenter.num_masks:
     print(segmenter.avg_labs[i])
     print(segmenter.mask_labels[i])
@@ -69,9 +69,10 @@ if i <= segmenter.num_masks:
         print(f'{layer}: {np.stack(label)}')
 
 print(segmenter.num_masks)
+print(np.sort(segmenter.largest_flakes('monolayer'))[::-1])
 
 # Show Results
-fig, axs = plt.subplots(1, 3, figsize=(10,10))
+fig, axs = plt.subplots(1, 4, figsize=(10,10))
 
 def format_coord(x, y):
     col = int(x + 0.5) # Round to the nearest integer
@@ -90,8 +91,9 @@ axs[2].imshow(segmenter.masks, cmap='inferno')
 axs[2].axis('off')
 axs[2].format_coord = format_coord
 
-# axs[3].imshow(segmenter.masks == segmenter.bg_mask_id, cmap='inferno')
-# axs[3].axis('off')
+segmenter.lab[np.logical_not(segmenter.mask_template)] = np.array([0,0,0])
+axs[3].imshow(segmenter.varify(), cmap='inferno')
+axs[3].axis('off')
 
 plt.tight_layout()
 plt.show()

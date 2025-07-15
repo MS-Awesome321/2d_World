@@ -160,3 +160,12 @@ class Segmenter():
         result = label_table[resized_masks]
         self.labeled_masks = result
         return result
+
+
+    def largest_flakes(self, layer_type):
+        """
+        Find the size and locations of the largest {layer_type} flakes in the frame
+        """
+        
+        flakes = self.mask_areas[np.array(self.mask_labels) == layer_type]
+        return flakes

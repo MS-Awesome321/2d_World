@@ -13,7 +13,7 @@ test_stage = Stage(x, y, focus_comport='COM5', magnification=10)
 try:
     test_stage.set_direction(180)
     test_stage.set_home()
-    test_stage.set_chip_dims(6.5, 6.75)
+    test_stage.set_chip_dims(6, 6.75)
     test_stage.x_motor.setup_velocity(max_velocity=1_000_000, acceleration=1_000_000)
     test_stage.y_motor.setup_velocity(max_velocity=1_000_000, acceleration=1_000_000)
 
