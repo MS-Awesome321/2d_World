@@ -3,7 +3,7 @@ import numpy as np
 from scipy.ndimage import label
 
 class Segmenter():
-    def __init__(self, img, material, colors=None, numbers=None, min_area = 50, max_area = 10000000, magnification=100, k=3):
+    def __init__(self, img, material, colors=None, numbers=None, min_area = 50, max_area = 10000000, magnification=100, k=3, min_var = 0, max_var = 20):
         self.img = img
         self.size = img.shape[:2]
         self.target_bg_lab = material.target_bg_lab
@@ -13,6 +13,8 @@ class Segmenter():
         self.numbers = numbers
         self.min_area = min_area
         self.max_area = max_area
+        self.min_var = min_var
+        self.max_var = max_var
         
         self.lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB).astype(np.int16)
         self.lab[:,:,0] = self.lab[:,:,0] * 100.0/255.0
@@ -51,16 +53,24 @@ class Segmenter():
         flat_lab = self.lab.reshape(-1, 3)
         num_masks = self.num_masks + 1
 
-        # Prepare output array
+        # Prepare output arrays
         avg_labs = np.zeros((num_masks, 3), dtype=np.float32)
+        var_labs = np.zeros((num_masks, 3), dtype=np.float32)
 
-        # Compute sum for each channel using bincount, then divide by counts
+        # Compute mean and variance for each channel using bincount
         for c in range(3):
             sums = np.bincount(flat_masks, weights=flat_lab[:, c], minlength=num_masks)
-            avg_labs[:, c] = sums / self.mask_areas
+            means = sums / self.mask_areas
+            avg_labs[:, c] = means
+
+            # Variance: E[x^2] - (E[x])^2
+            sq_sums = np.bincount(flat_masks, weights=flat_lab[:, c]**2, minlength=num_masks)
+            mean_sq = sq_sums / self.mask_areas
+            var_labs[:, c] = mean_sq - means**2
 
         self.avg_labs = avg_labs
-        return avg_labs
+        self.var_labs = np.linalg.norm(var_labs, axis=1)
+        return avg_labs, var_labs
 
     def adjust_layer_labels(self):
         if self.segment_edges:
@@ -101,6 +111,7 @@ class Segmenter():
 
         for idx, i in enumerate(self.mask_ids):
             area = self.mask_areas[i]
+            variance = self.var_labs[i]
             if i==0:
                 # Don't label edge mask
                 self.mask_labels.append('bg')
@@ -108,6 +119,8 @@ class Segmenter():
                 self.mask_labels.append('dirt')
             else:
                 label = layer_types[min_indices[idx]]
+                if ('mono' in label or 'bi' in label or 'tri' in label) and (variance > self.max_var or variance < self.min_var):
+                    label = 'dirt'
                 self.mask_labels.append(label)
 
     def process_frame(self, black_zone_mask=None, segment_edges=False):
@@ -146,6 +159,17 @@ class Segmenter():
         # Map each pixel in self.masks to its number using the lookup table
         result = number_table[self.masks]
         self.numbered_masks = result
+        return result
+    
+    def variance_map(self):
+        # Prepare a lookup table for numbers for all mask ids
+        var_table = np.zeros((np.max(self.mask_ids) + 1))
+        for i in self.mask_ids:
+            var_table[i] = self.var_labs[i]
+
+        # Map each pixel in self.masks to its number using the lookup table
+        result = var_table[self.masks]
+        self.variance_masks = result
         return result
     
     def labelify(self, shrink=1):
