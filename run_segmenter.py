@@ -39,7 +39,7 @@ elif 'M5' in filename:
 else:
     magnification = 20
 
-g1 = cv2.imread(f'/Users/mayanksengupta/Desktop/2d_World/hardware/photo_dir/{filename}')
+g1 = cv2.imread(f'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/{filename}')
 g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
 shrink = 0.25
 g1 = cv2.resize(g1, (int(g1.shape[1]/shrink), int(g1.shape[0]/shrink)))

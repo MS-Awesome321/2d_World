@@ -24,12 +24,14 @@ colors_by_layer = {
 
 # image_path = os.listdir("../monolayerGraphene/monolayer_Graphene/")[int(sys.argv[1])]
 
-dir = '/Users/mayanksengupta/Desktop/2d_World/hardware/photo_dir'
-result_dir = '/Users/mayanksengupta/Desktop/2d_World/hardware/results'
+dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir'
+result_dir = 'C:/Users/admin/Desktop/2d_World/hardware/results'
 files = os.listdir(dir)
 
 monolayer_sizes = np.array([])
-frame_nums = np.array([])
+mono_frame_nums = np.array([])
+bilayer_sizes = np.array([])
+bi_frame_nums = np.array([])
 
 for filename in tqdm(files):
     # if 'M100' in filename:
@@ -67,14 +69,21 @@ for filename in tqdm(files):
 
         cv2.imwrite(f'{result_dir}/{filename}', result)
 
-        mono_size = segmenter.largest_flakes('bilayer')
+        mono_size = segmenter.largest_flakes('monolayer')
+        bi_size = segmenter.largest_flakes('bilayer')
         if 'test_' in filename:
             i = int(filename[filename.index('_') + 1:filename.index('.')])
             monolayer_sizes = np.concatenate((monolayer_sizes, mono_size))
-            frame_nums = np.concatenate((frame_nums, i*np.ones_like(mono_size)))
+            mono_frame_nums = np.concatenate((mono_frame_nums, i*np.ones_like(mono_size)))
+            bilayer_sizes = np.concatenate((bilayer_sizes, bi_size))
+            bi_frame_nums = np.concatenate((bi_frame_nums, i*np.ones_like(bi_size)))
     except:
         print(f'{filename} corrupted')
 
 sorted_array = np.argsort(monolayer_sizes)[::-1]
 print(monolayer_sizes[sorted_array])
-print(frame_nums[sorted_array])
+print(mono_frame_nums[sorted_array])
+
+sorted_array = np.argsort(bilayer_sizes)[::-1]
+print(bilayer_sizes[sorted_array])
+print(bi_frame_nums[sorted_array])

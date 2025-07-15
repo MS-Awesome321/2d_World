@@ -227,7 +227,7 @@ graphene_labels = { # cielab colorspace
                   (50, 0, -15): 'manylayer',
                   (60, -10, 0): 'manylayer',
                   (66, -7, 11): 'manylayer',
-                  (43.5, 8, 1): 'manylayer',
+                  # (43.5, 8, 1): 'manylayer',
                   (75, 0, 35): 'bulk',
                   (80, 5, 10): 'bulk',
                   (50, 19, 22): 'bulk',

@@ -90,7 +90,7 @@ class Segmenter():
         self.layer_labels = new_layer_labels
         # Add bg lab
         self.layer_labels[tuple(self.avg_bg_lab)] = 'bg'
-        second_bg_lab = (self.avg_bg_lab[0] - 5, self.avg_bg_lab[1] + 1.5, self.avg_bg_lab[2] + 0.5)
+        second_bg_lab = (self.avg_bg_lab[0] - 10, self.avg_bg_lab[1] + 1.5, self.avg_bg_lab[2] + 0.5)
         self.layer_labels[second_bg_lab] = 'bg'
         # third_bg_lab = (self.avg_bg_lab[0] + 3, self.avg_bg_lab[1], self.avg_bg_lab[2])
         # self.layer_labels[third_bg_lab] = 'bg'
