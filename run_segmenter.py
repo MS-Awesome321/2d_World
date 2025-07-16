@@ -92,6 +92,9 @@ axs[1].imshow(result, cmap='inferno')
 axs[1].axis('off')
 axs[1].format_coord = format_coord
 
+if i is not None:
+    centroid = segmenter.mask_coords(i)
+    axs[2].scatter(*centroid[::-1])
 axs[2].imshow(segmenter.masks, cmap='inferno')
 axs[2].axis('off')
 axs[2].format_coord = format_coord

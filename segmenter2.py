@@ -193,3 +193,13 @@ class Segmenter():
         
         flakes = self.mask_areas[np.array(self.mask_labels) == layer_type]
         return flakes
+    
+    def mask_coords(self, mask_id):
+        """
+        Returns the (row, col) coordinates of the centroid of the given mask id.
+        """
+        coords = np.argwhere(self.masks == mask_id)
+        if coords.size == 0:
+            return None  # Mask id not found
+        centroid = coords.mean(axis=0)
+        return tuple(centroid)
