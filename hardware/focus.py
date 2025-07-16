@@ -84,6 +84,9 @@ class Focus:
     def get_pos(self):
         return self.position
     
+    def get_position(self):
+        return self.position
+    
     def move_to(self, target, wait=False):
         dist = self.position - target
         if abs(dist) <= 2000:

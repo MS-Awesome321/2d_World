@@ -223,11 +223,14 @@ class Stage:
 
         if focus_comport:
             focus = Focus(focus_comport)
+            self.motors.append(focus)
 
         if turret_comport:
             turret = Turret(turret_comport)
 
         focus_speed = 10
+
+        prev_pos = self.get_pos()
 
         while True:
             key = keyboard.read_event()
@@ -257,6 +260,17 @@ class Stage:
                     self.x_motor.stop()
                 else:
                     self.x_motor.jog('+')
+            
+            elif key.name == 'm':
+                current_pos = self.get_pos()
+                print(np.array(current_pos) - np.array(prev_pos))
+                prev_pos = current_pos
+                time.sleep(0.25)
+
+            elif key.name == 'n':
+                current_pos = self.get_pos()
+                print(f'Current Position: {np.array(current_pos)}')
+                time.sleep(0.25)
 
             if turret_comport:
                 if key.name == '1':

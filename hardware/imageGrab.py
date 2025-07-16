@@ -60,10 +60,6 @@ def color_count_score(img, bins=16, shrink = 4):
     return len(unique_colors)
 
 try:
-    cv2.namedWindow("Python View", cv2.WINDOW_NORMAL)
-    # cv2.resizeWindow("Python View", 960, 640)
-    cv2.moveWindow("Python View", 900, -1100)
-
     while(True):        
         frame =  np.array(ImageGrab.grab(bbox=(200,200,960,640)))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -72,8 +68,20 @@ try:
         # score = color_count_score(frame, bins=4)
         score = blur_score(frame)
 
+        # Draw crosshair in the middle of the frame
+        h, w = frame.shape[:2]
+        center_x, center_y = w // 2, h // 2
+        crosshair_length = 10
+        crosshair_color = (0, 255, 0)
+        crosshair_thickness = 2
+        # Horizontal line
+        cv2.line(frame, (center_x - crosshair_length, center_y), (center_x + crosshair_length, center_y), crosshair_color, crosshair_thickness)
+        # Vertical line
+        cv2.line(frame, (center_x, center_y - crosshair_length), (center_x, center_y + crosshair_length), crosshair_color, crosshair_thickness)
+
         # Overlay Text
-        frame = cv2.putText(frame, 'Score = '+str(score), org, font, fontScale, color, thickness, cv2.LINE_AA)
+        frame = cv2.putText(frame, 'Score = '+str(score), org, font, fontScale, color, thickness,
+                            cv2.LINE_AA)
 
         cv2.imshow('Python View', frame)
 
