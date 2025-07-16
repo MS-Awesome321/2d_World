@@ -25,12 +25,9 @@ try:
     # plt.plot(coords[:,0], coords[:,1], '-o')
     # plt.show()
 
-    # test_stage.start_snake(TestSegment(photo_dir='photo_dir', filename='segment_img'))
-    wf = WF(min_blur = 3.5, take_pic=True, min_colors=12)
+    wf = WF('/Users/mayanksengupta/Desktop/2d_World/hardware/photo_dir', take_pic=True, live_segment=True)
     z_corners = [-2980, -3380, -470]
-    # z_corners = [0,0,0]
     test_stage.start_snake(z_corners=z_corners, wf = wf.wait_focus_and_click)
-    # test_stage.start_snake(z_corners=z_corners)
 
 
 except KeyboardInterrupt:

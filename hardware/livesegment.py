@@ -1,25 +1,15 @@
-import sys
 import cv2
 import numpy as np
-sys.path.append('C:/Users/PHY-Wulabmobile1/Desktop/test/2d_World/')
+import os
+import sys
+sys.path.append('/Users/mayanksengupta/Desktop/2d_World/')
 from segmenter2 import Segmenter
-from material import wte2, graphene, EntropyEdgeMethod, hessian_determinant
-from scipy.ndimage import gaussian_filter, gaussian_gradient_magnitude
-from skimage.filters import sobel, unsharp_mask, farid
+from material import graphene
+from tqdm import tqdm
+from utils import Stopwatch, focus_disk
 import warnings
-from PIL import ImageGrab
 
-warnings.filterwarnings("ignore", category=UserWarning)
-
-# gphoto2 --capture-movie --stdout | python livesegment.py
-
-sys.stdin = sys.stdin.buffer
-
-# Create a VideoCapture object to read from stdin
-cap = cv2.VideoCapture('Test_Videos/20X_1.mp4') 
-
-# Set the VideoCapture to read from gphoto2's stdout
-# cap.open("pipe:0", cv2.CAP_FFMPEG)
+warnings.simplefilter('ignore', UserWarning)
 
 colors_by_layer = {
     'monolayer': np.array([0,163,255])/255.0, # Blue
@@ -29,59 +19,66 @@ colors_by_layer = {
     'manylayer': np.array([255,165,0])/255.0, # Orange
     'bluish_layers': np.array([255,165,0])/255.0, # Orange
     'bulk': np.array([152,7,235])/255.0, # Purple
-    'dirt': np.array([0, 0, 0])/255.0, # Yellow
+    'dirt': np.array([0, 0, 0])/255.0, # Uncolored
     'more_bluish_layers': np.array([255, 255, 0])/255.0, # Yellow
     'bg': np.array([0, 0, 0])/255.0, # Uncolored
 }
 
-# Crop Function
-def crop(input):
-    return input[210:770, 400:1220]
-
-i = 0
-
-try:
-    while True:
-        frame =  np.array(ImageGrab.grab(bbox=(200,200,960,640)))
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-        # Read every tenth frame
-        i+=1
-        if i%5 != 0:
-            continue
-        
-        # Resize frame and prepare segmenter input
-        grow = 2
-        frame = cv2.resize(frame, (int(frame.shape[1]*grow), int(frame.shape[0]*grow)), cv2.INTER_NEAREST)
-        input = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-        # Initialize Segmenter
-        segmenter = Segmenter(input, graphene, colors=colors_by_layer, magnification=20)
 
 
-        # Run Segmenter
-        # segmenter.process_frame()
-        # segmenter.prettify()
-        # segmenter_output = (segmenter.colored_masks * 255).astype(np.uint8)
+dir = '/Users/mayanksengupta/Desktop/2d_World/hardware/photo_dir'
+result_dir = '/Users/mayanksengupta/Desktop/2d_World/hardware/results'
+result_txt = '/Users/mayanksengupta/Desktop/2d_World/hardware/results.txt'
 
-        # output = cv2.cvtColor((255*EntropyEdgeMethod(magnification=20, sigma=1, threshold=0.875)(frame)).astype('uint8'), cv2.COLOR_RGB2BGR)
-        edges = farid(cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY))
-        edges = edges/np.max(edges)
-        edges = np.pow(edges, 2**(-2))
-        fattened = edges.copy()
-        fattened[fattened < 0.22] = 0
-        fattened = gaussian_filter(edges, sigma=2)
-        edges[edges < 0.3] = 2*fattened[edges < 0.3]
-        # edges = edges > 0.22
-        output = cv2.cvtColor((255*edges).astype('uint8'), cv2.COLOR_GRAY2BGR)
+monolayer_sizes = np.array([])
+mono_frame_nums = np.array([])
+bilayer_sizes = np.array([])
+bi_frame_nums = np.array([])
 
-        # Display the frame
-        # shown = np.concatenate((output, frame), axis=1)
-        cv2.imshow('Live Segmentation Demo', output)
+filename = sys.argv[1]
+g1 = cv2.imread(f'{dir}/{filename}')
+shrink = 0.25
+f = focus_disk(g1, int(275/shrink), invert=True)
 
-         # NEVER REMOVE
-        cv2.waitKey(1)
+segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=10, min_area=500)
+segmenter.process_frame(black_zone_mask=f, segment_edges=True)
+result = segmenter.prettify()
+result = (255 * result).astype(np.uint8)
+result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
 
-except KeyboardInterrupt:
-    # graceful exit
-    cv2.destroyAllWindows()
+cv2.imwrite(f'{result_dir}/{filename}', result)
+
+mono_size = segmenter.largest_flakes('monolayer')
+bi_size = segmenter.largest_flakes('bilayer')
+
+if 'test_' in filename:
+    i = int(filename[filename.index('_') + 1:filename.index('.')])
+    mono_frame_nums = np.concatenate((mono_frame_nums, i*np.ones_like(mono_size)))
+    bi_frame_nums = np.concatenate((bi_frame_nums, i*np.ones_like(bi_size)))
+
+    if os.path.exists(result_txt):
+        with open(result_txt, 'r') as f:
+            lines = f.readlines()
+        # Ensure there are 4 lines
+        while len(lines) < 4:
+            lines.append('\n')
+    else:
+        lines = ['\n'] * 4
+
+    # Prepare new data as strings
+    def append_to_line(line, arr):
+        arr_str = ' '.join(str(x) for x in arr)
+        line = line.strip()
+        if line:
+            return line + ' ' + arr_str + '\n'
+        else:
+            return arr_str + '\n'
+
+    lines[0] = append_to_line(lines[0], mono_size)
+    lines[1] = append_to_line(lines[1], bi_size)
+    lines[2] = append_to_line(lines[2], mono_frame_nums)
+    lines[3] = append_to_line(lines[3], bi_frame_nums)
+
+    # Write back to results.txt
+    with open(result_txt, 'w') as f:
+        f.writelines(lines)

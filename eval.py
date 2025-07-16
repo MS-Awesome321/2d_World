@@ -61,7 +61,7 @@ for filename in tqdm(files):
         f = focus_disk(g1, int(275/shrink), invert=True)
 
         # Initialize Segmenter
-        segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=20, min_area=500)
+        segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=10, min_area=500)
         segmenter.process_frame(black_zone_mask=f, segment_edges=True)
         result = segmenter.prettify()
         result = (255 * result).astype(np.uint8)
