@@ -3,7 +3,7 @@ import numpy as np
 from scipy.ndimage import label
 
 class Segmenter():
-    def __init__(self, img, material, colors=None, numbers=None, min_area = 50, max_area = 10000000, magnification=100, k=3, min_var = 0, max_var = 20):
+    def __init__(self, img, material, colors=None, numbers=None, min_area = 50, max_area = 10000000, magnification=100, k=3, min_var = 0, max_var = 15):
         self.img = img
         self.size = img.shape[:2]
         self.target_bg_lab = material.target_bg_lab

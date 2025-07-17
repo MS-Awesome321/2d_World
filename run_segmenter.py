@@ -37,7 +37,7 @@ elif 'M10' in filename:
 elif 'M5' in filename:
     magnification = 5
 else:
-    magnification = 20
+    magnification = 10
 
 g1 = cv2.imread(f'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/{filename}')
 g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
@@ -47,7 +47,7 @@ f = focus_disk(g1, int(275/shrink), invert=True)
 
 # Initialize Segmenter
 watch.clock()
-segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=magnification, min_area=400)
+segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=magnification, min_area=1000)
 print(segmenter.edge_method.mag)
 watch.clock()
 segmenter.make_masks(black_zone_mask=f, segment_edges=True)
@@ -99,7 +99,6 @@ axs[2].imshow(segmenter.masks, cmap='inferno')
 axs[2].axis('off')
 axs[2].format_coord = format_coord
 
-segmenter.lab[np.logical_not(segmenter.mask_template)] = np.array([0,0,0])
 axs[3].imshow(segmenter.variance_map(), cmap='inferno')
 axs[3].axis('off')
 axs[3].format_coord = format_coord

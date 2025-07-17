@@ -31,7 +31,7 @@ def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2, direction
     ok_blur = 4.5
 
     while(True):        
-        frame =  np.array(ImageGrab.grab(bbox=(200,200,960,640)))
+        frame =  np.array(ImageGrab.grab(bbox=(202,205,960,710)))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
         if q_stop and keyboard.is_pressed('q'):
@@ -45,7 +45,7 @@ def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2, direction
         # frame = cv2.putText(frame, 'Blur Factor = '+str(score)+" "+str(prev_score), org, font, fontScale, color, thickness, cv2.LINE_AA)
 
         if auto_stop and color_count_score(frame, 4) < 14:
-            return False
+            return score
 
         if prev_score:
             if score < prev_score:
@@ -80,7 +80,7 @@ def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2, direction
 
         if auto_stop and timer > timeup:
             cv2.destroyAllWindows()
-            return True
+            return score
 
         timer += 1
 

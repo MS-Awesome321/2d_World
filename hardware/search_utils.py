@@ -5,7 +5,7 @@ import os
 import cv2
 from focus import Focus
 import sys
-sys.path.append('/Users/mayanksengupta/Desktop/2d_World/')
+sys.path.append('C:/Users/admin/Desktop/2d_World/')
 from segmenter2 import Segmenter
 from material import wte2, graphene, EntropyEdgeMethod
 from autofocus import autofocus, color_count_score
@@ -41,38 +41,24 @@ class GetOptFocus():
 
 
 class WF():
-    def __init__(self, result_dir, take_pic = True, live_segment = False, segment_interval=7):
+    def __init__(self, photo_dir, take_pic = True, min_blur = 2.5):
         self.take_pic = take_pic
         self.counter = 0
-        self.live_segment = live_segment
-        self.segment_interval = segment_interval
-        self.result_dir = result_dir
+        self.photo_dir = photo_dir
+        self.min_blur = min_blur
 
     def wait_focus_and_click(self, focus_motor=None, n_cols=50, end=False):
         if keyboard.is_pressed('q'):
             raise KeyboardInterrupt
 
-        time.sleep(0.06)
-
         temp = focus_motor.get_pos()
         d = 1 if self.counter//n_cols % 2 == 0 else -1
-        autofocus(auto_stop=True, focus=focus_motor, timeup=5, direction=d)
+        final_score = autofocus(auto_stop=True, focus=focus_motor, timeup=5, direction=d)
         focus_motor.position = temp
 
-        if self.take_pic:
-            bgr_frame =  np.array(ImageGrab.grab(bbox=(200,200,960,640)))
+        if self.take_pic and final_score > self.min_blur:
+            bgr_frame =  np.array(ImageGrab.grab(bbox=(202,205,960,710)))
             frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
-
-        if self.live_segment:
-            filename = f'{self.result_dir}/test_{self.counter}.jpg'
-            p = multiprocessing.Process(
-                target=subprocess.run,
-                args=(["python", "/Users/mayanksengupta/Desktop/2d_World/hardware/livesegment.py", filename],),
-            )
-            p.start()
-
-        time.sleep(0.04)
-        cv2.imwrite(f'{self.result_dir}/test_{self.counter}.jpg', frame)
-        cv2.waitKey(1)
+            cv2.imwrite(f'{self.photo_dir}/test_{self.counter}.jpg', frame)
 
         self.counter += 1

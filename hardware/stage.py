@@ -93,10 +93,10 @@ class Stage:
 
     def set_chip_dims(self, long_edge_mm, short_edge_mm):
         """
-        Store chip dimensions in microns (Kinesis’ distance units).
+        Store chip dimensions in motor steps (Kinesis’ distance units).
         """
-        self.long_edge  = long_edge_mm  * 100_000
-        self.short_edge = short_edge_mm * 100_000
+        self.long_edge  = long_edge_mm  * 610_000
+        self.short_edge = short_edge_mm * 610_000
 
     def change_speed(self, motor, up_down):
         """
