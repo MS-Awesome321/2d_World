@@ -104,16 +104,30 @@ def sort_results(filename):
     bilayer_sizes = np.array(lines[1])
     mono_frame_nums = np.array(lines[2])
     bi_frame_nums = np.array(lines[3])
+    mono_locations_x = np.array(lines[4])
+    mono_locations_y = np.array(lines[5])
+    mono_locations_z = np.array(lines[6])
+    bi_locations_x = np.array(lines[7])
+    bi_locations_y = np.array(lines[8])
+    bi_locations_z = np.array(lines[9])
 
     sorted_array = np.argsort(monolayer_sizes)[::-1]
     monolayer_sizes = monolayer_sizes[sorted_array]
     mono_frame_nums = mono_frame_nums[sorted_array]
+    mono_locations_x = mono_locations_x[sorted_array]
+    mono_locations_y = mono_locations_y[sorted_array]
+    mono_locations_z = mono_locations_z[sorted_array]
 
     sorted_array = np.argsort(bilayer_sizes)[::-1]
     bilayer_sizes = bilayer_sizes[sorted_array]
     bi_frame_nums = bi_frame_nums[sorted_array]
+    bi_locations_x = bi_locations_x[sorted_array]
+    bi_locations_y = bi_locations_y[sorted_array]
+    bi_locations_z = bi_locations_z[sorted_array]
 
     result_str = f'mono_sizes: {np.array2string(monolayer_sizes, max_line_width=10000)}\nbi_sizes: {np.array2string(bilayer_sizes, max_line_width=10000)}\nmono_frame_nums: {np.array2string(mono_frame_nums, max_line_width=10000)}\nbi_frame_nums: {np.array2string(bi_frame_nums, max_line_width=10000)}\n'
+    result_str += f'mono_x: {mono_locations_x}\nmono_y: {mono_locations_y}\nmono_z: {mono_locations_z}\nbi_x: {bi_locations_x}\nbi_y: {bi_locations_y}\nbi_z: {bi_locations_z}\n'
+    result_str = result_str.replace('[', '').replace(']', '').replace('   ', ' ').replace('  ', ' ')
 
     with open(filename, 'w') as f:
-        f.writelines(result_str.replace('[', '').replace(']', '').replace('   ', ' ').replace('  ', ' '))
+        f.writelines(result_str)

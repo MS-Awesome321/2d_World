@@ -54,8 +54,8 @@ def segment(filename):
 
     cv2.imwrite(f'{result_dir}/{filename}', result)
 
-    mono_size = segmenter.largest_flakes('monolayer')
-    bi_size = segmenter.largest_flakes('bilayer')
+    mono_size, mono_locations = segmenter.largest_flakes('monolayer')
+    bi_size, bi_locations = segmenter.largest_flakes('bilayer')
 
     if 'test_' in filename:
         i = int(filename[filename.index('_') + 1:filename.index('.')])
@@ -68,8 +68,17 @@ def segment(filename):
 
         lines[0] = append_to_line(lines[0], mono_size)
         lines[1] = append_to_line(lines[1], bi_size)
+
         lines[2] = append_to_line(lines[2], mono_frame_nums)
         lines[3] = append_to_line(lines[3], bi_frame_nums)
+
+        lines[4] = append_to_line(lines[4], mono_locations[:, 0])
+        lines[5] = append_to_line(lines[5], mono_locations[:, 1])
+        lines[6] = append_to_line(lines[6], mono_locations[:, 2])
+
+        lines[7] = append_to_line(lines[7], bi_locations[:, 0])
+        lines[8] = append_to_line(lines[8], bi_locations[:, 1])
+        lines[9] = append_to_line(lines[9], bi_locations[:, 2])
 
         # Write back to results.txt
         with open(result_txt, 'w') as f:

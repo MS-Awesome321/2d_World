@@ -191,8 +191,10 @@ class Segmenter():
         Find the size and locations of the largest {layer_type} flakes in the frame
         """
         
-        flakes = self.mask_areas[np.array(self.mask_labels) == layer_type]
-        return flakes
+        idxs = np.array(self.mask_labels) == layer_type
+        flake_areas = self.mask_areas[idxs]
+        flake_locations = np.stack([self.mask_coords(mask_id) for mask_id in self.mask_ids[idxs]], axis=-1)
+        return flake_areas, flake_locations
     
     def mask_coords(self, mask_id):
         """
