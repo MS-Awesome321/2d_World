@@ -179,8 +179,6 @@ class Stage:
         for x, y, z in tqdm(coords):
             self.x_motor.move_to(x)
             self.y_motor.move_to(y)
-            self.x_motor.wait_for_stop()
-            self.y_motor.wait_for_stop()
             if self.focus_motor is not None:
                 self.focus_motor.move_to(z)
             
@@ -210,7 +208,6 @@ class Stage:
     def move_to(self, location):
         for i in range(len(location)):
             self.motors[i].move_to(location[i])
-            time.sleep(0.05)
 
     def move_home(self):
         self.move_to(self.home_location)

@@ -66,19 +66,19 @@ def segment(filename):
             with open(result_txt, 'r') as f:
                 lines = f.readlines()
 
-        lines[0] = append_to_line(lines[0], mono_size)
-        lines[1] = append_to_line(lines[1], bi_size)
+        if mono_locations is not None:
+            mono_locations = np.round(mono_locations, 2)
+            lines[0] = append_to_line(lines[0], mono_size)
+            lines[2] = append_to_line(lines[2], mono_frame_nums)
+            lines[4] = append_to_line(lines[4], mono_locations[:, 0])
+            lines[5] = append_to_line(lines[5], mono_locations[:, 1])
 
-        lines[2] = append_to_line(lines[2], mono_frame_nums)
-        lines[3] = append_to_line(lines[3], bi_frame_nums)
-
-        lines[4] = append_to_line(lines[4], mono_locations[:, 0])
-        lines[5] = append_to_line(lines[5], mono_locations[:, 1])
-        lines[6] = append_to_line(lines[6], mono_locations[:, 2])
-
-        lines[7] = append_to_line(lines[7], bi_locations[:, 0])
-        lines[8] = append_to_line(lines[8], bi_locations[:, 1])
-        lines[9] = append_to_line(lines[9], bi_locations[:, 2])
+        if bi_locations is not None:
+            bi_locations = np.round(bi_locations, 2)
+            lines[1] = append_to_line(lines[1], bi_size)
+            lines[3] = append_to_line(lines[3], bi_frame_nums)
+            lines[6] = append_to_line(lines[6], bi_locations[:, 0])
+            lines[7] = append_to_line(lines[7], bi_locations[:, 1])
 
         # Write back to results.txt
         with open(result_txt, 'w') as f:

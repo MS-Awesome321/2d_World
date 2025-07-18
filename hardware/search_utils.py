@@ -53,12 +53,53 @@ class WF():
 
         temp = focus_motor.get_pos()
         d = 1 if self.counter//n_cols % 2 == 0 else -1
-        final_score = autofocus(auto_stop=True, focus=focus_motor, timeup=5, direction=d)
+        final_score = autofocus(auto_stop=True, q_stop=True, focus=focus_motor, timeup=2, direction=d)
         focus_motor.position = temp
 
-        if self.take_pic and final_score > self.min_blur:
+        if self.take_pic:
             bgr_frame =  np.array(ImageGrab.grab(bbox=(202,205,960,710)))
             frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
             cv2.imwrite(f'{self.photo_dir}/test_{self.counter}.jpg', frame)
 
         self.counter += 1
+
+def sort_results(filename):
+    with open(filename, 'r') as f:
+        lines = f.readlines()
+
+    for i in range(len(lines)):
+        colon_idx = lines[i].index(':') + 2
+        lines[i] = lines[i][colon_idx:-1].split(' ')
+        for j in range(len(lines[i])):
+            try:
+                lines[i][j] = int(lines[i][j])
+            except:
+                pass
+    
+    monolayer_sizes = np.array(lines[0])
+    bilayer_sizes = np.array(lines[1])
+    mono_frame_nums = np.array(lines[2])
+    bi_frame_nums = np.array(lines[3])
+    mono_locations_x = np.array(lines[4])
+    mono_locations_y = np.array(lines[5])
+    bi_locations_x = np.array(lines[6])
+    bi_locations_y = np.array(lines[7])
+
+    sorted_array = np.argsort(monolayer_sizes)[::-1]
+    monolayer_sizes = monolayer_sizes[sorted_array]
+    mono_frame_nums = mono_frame_nums[sorted_array]
+    mono_locations_x = mono_locations_x[sorted_array]
+    mono_locations_y = mono_locations_y[sorted_array]
+
+    sorted_array = np.argsort(bilayer_sizes)[::-1]
+    bilayer_sizes = bilayer_sizes[sorted_array]
+    bi_frame_nums = bi_frame_nums[sorted_array]
+    bi_locations_x = bi_locations_x[sorted_array]
+    bi_locations_y = bi_locations_y[sorted_array]
+
+    result_str = f'mono_sizes: {np.array2string(monolayer_sizes, max_line_width=10000)}\nbi_sizes: {np.array2string(bilayer_sizes, max_line_width=10000)}\nmono_frame_nums: {np.array2string(mono_frame_nums, max_line_width=10000)}\nbi_frame_nums: {np.array2string(bi_frame_nums, max_line_width=10000)}\n'
+    result_str += f'mono_x: {np.array2string(mono_locations_x, max_line_width=10000)}\nmono_y: {np.array2string(mono_locations_y, max_line_width=10000)}\nbi_x: {np.array2string(bi_locations_x, max_line_width=10000)}\nbi_y: {np.array2string(bi_locations_y, max_line_width=10000)}\n'
+    result_str = result_str.replace('[', '').replace(']', '').replace('   ', ' ').replace('  ', ' ').replace("'", "")
+
+    with open(filename, 'w') as f:
+        f.writelines(result_str)

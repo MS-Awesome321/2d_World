@@ -1,12 +1,5 @@
 from stage import Stage
-from focus import Focus
-import matplotlib.pyplot as plt
-import numpy as np
-from search_utils import WF
-import sys
-sys.path.append('C:/Users/admin/Desktop/2d_World/')
-from utils import sort_results       
-import os
+from search_utils import WF, sort_results
 
 x = '27503936'
 y = '27503951'
@@ -17,8 +10,8 @@ try:
     test_stage.set_direction(180)
     test_stage.set_home()
     test_stage.set_chip_dims(1, 1.1)
-    test_stage.x_motor.setup_velocity(max_velocity=1_000_000, acceleration=500_000)
-    test_stage.y_motor.setup_velocity(max_velocity=1_000_000, acceleration=500_000)
+    test_stage.x_motor.setup_velocity(max_velocity=1_000_000, acceleration=2_000_000)
+    test_stage.y_motor.setup_velocity(max_velocity=1_000_000, acceleration=2_000_000)
 
     # coords = test_stage.get_snake()
     # coords = np.stack(coords, axis=0)c
@@ -34,8 +27,10 @@ try:
 
 
 except KeyboardInterrupt:
-    test_stage.stop()
-    test_stage.move_home()
-    print('Stopped Motion.')
+    pass
+
+test_stage.stop()
+test_stage.move_home()
+print('Stopped Motion.')
 
 sort_results('results.txt')

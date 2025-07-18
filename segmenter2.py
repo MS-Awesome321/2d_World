@@ -3,7 +3,7 @@ import numpy as np
 from scipy.ndimage import label
 
 class Segmenter():
-    def __init__(self, img, material, colors=None, numbers=None, min_area = 50, max_area = 10000000, magnification=100, k=3, min_var = 0, max_var = 15):
+    def __init__(self, img, material, colors=None, numbers=None, min_area = 50, max_area = 10000000, magnification=100, k=3, bg_percentile = 50):
         self.img = img
         self.size = img.shape[:2]
         self.target_bg_lab = material.target_bg_lab
@@ -13,8 +13,7 @@ class Segmenter():
         self.numbers = numbers
         self.min_area = min_area
         self.max_area = max_area
-        self.min_var = min_var
-        self.max_var = max_var
+        self.bg_percentile = bg_percentile
         
         self.lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB).astype(np.int16)
         self.lab[:,:,0] = self.lab[:,:,0] * 100.0/255.0
@@ -64,17 +63,17 @@ class Segmenter():
             avg_labs[:, c] = means
 
             # Variance: E[x^2] - (E[x])^2
-            sq_sums = np.bincount(flat_masks, weights=flat_lab[:, c]**2, minlength=num_masks)
-            mean_sq = sq_sums / self.mask_areas
-            var_labs[:, c] = mean_sq - means**2
+            # sq_sums = np.bincount(flat_masks, weights=flat_lab[:, c]**2, minlength=num_masks)
+            # mean_sq = sq_sums / self.mask_areas
+            # var_labs[:, c] = mean_sq - means**2
 
         self.avg_labs = avg_labs
-        self.var_labs = np.linalg.norm(var_labs, axis=1)
+        # self.var_labs = np.linalg.norm(var_labs, axis=1)
         return avg_labs, var_labs
 
     def adjust_layer_labels(self):
         if self.segment_edges:
-            l = np.mean(self.lab[:,:,0][self.bg_mask])
+            l = np.percentile(self.lab[:,:,0][self.bg_mask], self.bg_percentile)
             a = np.mean(self.lab[:,:,1][self.bg_mask])
             b = np.mean(self.lab[:,:,2][self.bg_mask])
             self.avg_bg_lab = np.array([l, a, b])
@@ -111,7 +110,6 @@ class Segmenter():
 
         for idx, i in enumerate(self.mask_ids):
             area = self.mask_areas[i]
-            variance = self.var_labs[i]
             if i==0:
                 # Don't label edge mask
                 self.mask_labels.append('bg')
@@ -119,8 +117,6 @@ class Segmenter():
                 self.mask_labels.append('dirt')
             else:
                 label = layer_types[min_indices[idx]]
-                if ('mono' in label or 'bi' in label or 'tri' in label) and (variance > self.max_var or variance < self.min_var):
-                    label = 'dirt'
                 self.mask_labels.append(label)
 
     def process_frame(self, black_zone_mask=None, segment_edges=False):
@@ -161,16 +157,16 @@ class Segmenter():
         self.numbered_masks = result
         return result
     
-    def variance_map(self):
-        # Prepare a lookup table for numbers for all mask ids
-        var_table = np.zeros((np.max(self.mask_ids) + 1))
-        for i in self.mask_ids:
-            var_table[i] = self.var_labs[i]
+    # def variance_map(self):
+    #     # Prepare a lookup table for numbers for all mask ids
+    #     var_table = np.zeros((np.max(self.mask_ids) + 1))
+    #     for i in self.mask_ids:
+    #         var_table[i] = self.var_labs[i]
 
-        # Map each pixel in self.masks to its number using the lookup table
-        result = var_table[self.masks]
-        self.variance_masks = result
-        return result
+    #     # Map each pixel in self.masks to its number using the lookup table
+    #     result = var_table[self.masks]
+    #     self.variance_masks = result
+    #     return result
     
     def labelify(self, shrink=1):
         """
@@ -193,8 +189,12 @@ class Segmenter():
         
         idxs = np.array(self.mask_labels) == layer_type
         flake_areas = self.mask_areas[idxs]
-        flake_locations = np.stack([self.mask_coords(mask_id) for mask_id in self.mask_ids[idxs]], axis=-1)
-        return flake_areas, flake_locations
+        to_stack = [self.mask_coords(mask_id) for mask_id in self.mask_ids[idxs]]
+        if len(to_stack) > 0:
+            flake_locations = np.stack(to_stack, axis=0)
+            return flake_areas, flake_locations
+        else:
+            return flake_areas, None
     
     def mask_coords(self, mask_id):
         """
@@ -204,4 +204,4 @@ class Segmenter():
         if coords.size == 0:
             return None  # Mask id not found
         centroid = coords.mean(axis=0)
-        return tuple(centroid)
+        return np.array(centroid)

@@ -73,7 +73,6 @@ if i is not None and i <= segmenter.num_masks:
         print(f'{layer}: {np.stack(label)}')
 
 print(segmenter.num_masks)
-print(np.sort(segmenter.largest_flakes('monolayer'))[::-1])
 
 # Show Results
 fig, axs = plt.subplots(1, 4, figsize=(10,10))
@@ -94,12 +93,14 @@ axs[1].format_coord = format_coord
 
 if i is not None:
     centroid = segmenter.mask_coords(i)
+    print(centroid)
+    print(g1.shape)
     axs[2].scatter(*centroid[::-1])
 axs[2].imshow(segmenter.masks, cmap='inferno')
 axs[2].axis('off')
 axs[2].format_coord = format_coord
 
-axs[3].imshow(segmenter.variance_map(), cmap='inferno')
+axs[3].imshow(segmenter.edges, cmap='inferno')
 axs[3].axis('off')
 axs[3].format_coord = format_coord
 

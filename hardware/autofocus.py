@@ -24,7 +24,42 @@ def color_count_score(img, bins=16, shrink = 4):
     
     return len(unique_colors)
 
-def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2, direction = 1):
+def incremental_check(focus_motor, start, step, max) -> float:
+    focus_motor.rotate_relative(start)
+    time.sleep(0.0055 * abs(start))
+
+    frame =  np.array(ImageGrab.grab(bbox=(202,205,960,710)))
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    score = cv2.Laplacian(frame, cv2.CV_32FC1).var()
+    score = np.log(score)
+
+    prev_score = 0
+    max_score = 0
+    max_pos = None
+
+    i = start
+    while prev_score < score + 0.025 and abs(i) < abs(max):
+        prev_score = score
+
+        focus_motor.rotate_relative(step)
+        time.sleep(0.0055 * abs(step))
+
+        frame =  np.array(ImageGrab.grab(bbox=(202,205,960,710)))
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        score = cv2.Laplacian(frame, cv2.CV_32FC1).var()
+        score = np.log(score)
+        i += step
+
+        print(i, score, prev_score)
+        if score > max_score:
+            max_score = score
+            max_pos = focus_motor.get_position()
+
+    focus_motor.move_to(max_pos)
+    time.sleep(1)
+    return score
+
+def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2, direction = 1, change_factor = 1):
     focus_speed = 5
     prev_score = None
     timer = 0
@@ -44,15 +79,12 @@ def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2, direction
         # Overlay Text
         # frame = cv2.putText(frame, 'Blur Factor = '+str(score)+" "+str(prev_score), org, font, fontScale, color, thickness, cv2.LINE_AA)
 
-        if auto_stop and color_count_score(frame, 4) < 14:
-            return score
-
         if prev_score:
             if score < prev_score:
                 direction *= -1
             
             if score < 1.9:
-                focus_speed = 2000
+                focus_speed = 500
             if score < 2.15:
                 focus_speed = 200
             if score < 2.25:
@@ -72,7 +104,7 @@ def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2, direction
                 if auto_stop:
                     return True
 
-            focus.rotate_relative(direction * focus_speed)
+            focus.rotate_relative(change_factor * direction * focus_speed)
             time.sleep(0.0055 * focus_speed)
         prev_score = score
         
@@ -91,7 +123,12 @@ def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2, direction
 if __name__=='__main__':
     try:
         focus = Focus('COM5')
-        if autofocus(focus=focus, q_stop=True):
+        import sys
+        try:
+            r = float(sys.argv[1])
+        except:
+            r = 1
+        if autofocus(focus=focus, q_stop=True, change_factor=r):
             print(focus.get_pos())
     except KeyboardInterrupt:
         print("Exiting...")

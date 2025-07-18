@@ -77,7 +77,7 @@ class Focus:
         checksum = self.calculate_checksum(cmd)
         cmd.append(checksum)
         response = self.send_command(cmd)
-        if abs(dist) <= 2000:
+        if abs(dist) < 2000:
             self.position -= dist
         return self.position
 
@@ -87,13 +87,31 @@ class Focus:
     def get_position(self):
         return self.position
     
-    def move_to(self, target, wait=False):
+    def move_to(self, target, wait=True):
         dist = self.position - target
-        if abs(dist) <= 2000:
-            self.rotate_relative(dist)
-            if wait:
-                time.sleep(0.0055 * abs(dist))
+    
+        while abs(dist) > 0:
+            if abs(dist) < 2000:
+                self.rotate_relative(dist)
+                if wait:
+                    time.sleep(0.0055 * abs(dist))
+                dist = 0
+
+            elif dist >= 2000:
+                self.rotate_relative(1995)
+                if wait:
+                    time.sleep(0.0055 * 1995)
+                dist -= 1995
+
+            elif dist <= -2000:
+                self.rotate_relative(-1995)
+                if wait:
+                    time.sleep(0.0055 * 1995)
+                dist += 1995
         return self.position
+    
+    def wait_for_stop(self):
+        pass
 
     def set_zero(self):
         self.position = 0
