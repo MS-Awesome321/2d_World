@@ -22,7 +22,7 @@ try:
     # plt.show()
 
     wf = WF('C:/Users/admin/Desktop/2d_World/hardware/photo_dir', take_pic=True)
-    z_corners = [-2840, -2960, -170]
+    z_corners = [-2310, -2810, -575]
     test_stage.start_snake(z_corners=z_corners, wf = wf.wait_focus_and_click)
 
 

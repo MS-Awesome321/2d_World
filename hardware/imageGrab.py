@@ -61,7 +61,7 @@ def color_count_score(img, bins=16, shrink = 4):
 
 try:
     while(True):        
-        frame =  np.array(ImageGrab.grab(bbox=(202,205,960,710)))
+        frame =  np.array(ImageGrab.grab(bbox=(200,200,1160,840)))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         # Compute Score
