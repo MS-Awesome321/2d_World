@@ -39,10 +39,14 @@ class Segmenter():
             self.bg_mask = self.masks == self.bg_mask_id
 
             # Relabel masks 
-            sin_bg = np.logical_not(self.edges)
-            sin_bg[self.masks == self.bg_mask_id] = 0
-            self.mask_template = np.logical_or(old_copy, sin_bg)
-            self.mask_template[black_zone_mask] = 0
+            if black_zone_mask is not None:
+                sin_bg = np.logical_not(self.edges)
+                sin_bg[self.masks == self.bg_mask_id] = 0
+                self.mask_template = np.logical_or(old_copy, sin_bg)
+                self.mask_template[black_zone_mask] = 0
+            else:
+                self.mask_template = self.edges
+            
             self.masks, self.num_masks = label(self.mask_template)
             self.mask_ids, self.mask_areas = np.unique(self.masks, return_counts=True)
             
