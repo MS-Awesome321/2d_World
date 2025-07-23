@@ -12,7 +12,7 @@ import subprocess
 import time
 import os
 from PIL import Image
-# import pyautogui as pag
+import pyautogui as pag
 
 # turret = Turret('COM8')
 # print(turret.rotate_to_position(int(sys.argv[1])))
@@ -106,10 +106,10 @@ from PIL import Image
 # pag.leftClick(1794, 230)
 # pag.leftClick(1794, 230)
 
-# while True:
-#     print(pag.displayMousePosition())
-#     time.sleep(0.05)
+while True:
+    print(pag.displayMousePosition())
+    time.sleep(0.05)
 
-for i in range(10):
-    print(i)
-    time.sleep(1.5)
+# for i in range(10):
+#     print(i)
+#     time.sleep(1.5)

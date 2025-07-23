@@ -42,9 +42,9 @@ def append_to_line(line, arr):
 def segment(filename):
     g1 = cv2.imread(f'{dir}/{filename}')
     g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-    shrink = 0.25
-    g1 = cv2.resize(g1, (int(g1.shape[1]/shrink), int(g1.shape[0]/shrink)))
-    f = focus_disk(g1, int(355/shrink), invert=True)
+    grow = 3
+    g1 = cv2.resize(g1, (int(g1.shape[1]*grow), int(g1.shape[0]*grow)))
+    f = focus_disk(g1, int(410*grow), invert=True)
 
     segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=10, min_area=1000)
     segmenter.process_frame(black_zone_mask=f, segment_edges=True)

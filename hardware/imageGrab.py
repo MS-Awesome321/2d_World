@@ -60,8 +60,10 @@ def color_count_score(img, bins=16, shrink = 4):
     return len(unique_colors)
 
 try:
+    shrink = 2
     while(True):        
-        frame =  np.array(ImageGrab.grab(bbox=(200,200,1160,840)))
+        frame =  np.array(ImageGrab.grab(bbox=(432,137,1782,892)))
+        frame = cv2.resize(frame, (int(frame.shape[1]/shrink), int(frame.shape[0]/shrink)))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         # Compute Score

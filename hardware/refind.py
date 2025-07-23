@@ -27,7 +27,7 @@ test_stage = Stage(x, y, focus_comport='COM5', magnification=10)
 test_stage.set_direction(180)
 test_stage.set_home()
 test_stage.set_chip_dims(1, 1.1)
-z_plane = [-2310, -2810, -575]
+z_plane = [-3820, -4110, -210]
 
 
 def get_exact_location(coord, flake_location, frame_dims):
@@ -51,7 +51,7 @@ elif 'b' in mono_bi:
 else:
     raise ValueError('Bad argument for monolayer/bilayer')
 
-coord = get_exact_location(coords[f_num], (x, y), (2560, 3840, 3))
+coord = get_exact_location(coords[f_num], (x, y), (2265, 4050))
 coord = [int(e) for e in coord.tolist()]
 print(coord)
 

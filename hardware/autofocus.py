@@ -25,11 +25,11 @@ def color_count_score(img, bins=16, shrink = 4):
     
     return len(unique_colors)
 
-def incremental_check(focus_motor, start, step, max, window_size=15) -> float:
+def incremental_check(focus_motor, start, step, max, window_size=5, shrink=2, bbox=(432,137,1782,892)) -> float:
     focus_motor.rotate_relative(start)
     time.sleep(0.006 * abs(start))
 
-    frame = np.array(ImageGrab.grab(bbox=(200,200,1160,840)))
+    frame = np.array(ImageGrab.grab(bbox=bbox))
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     score = np.log(cv2.Laplacian(frame, cv2.CV_32FC1).var())
 
@@ -44,7 +44,8 @@ def incremental_check(focus_motor, start, step, max, window_size=15) -> float:
         focus_motor.rotate_relative(step)
         time.sleep(0.006 * abs(step))
 
-        frame = np.array(ImageGrab.grab(bbox=(200,200,1160,840)))
+        frame = np.array(ImageGrab.grab(bbox=bbox))
+        frame = cv2.resize(frame, (int(frame.shape[1]/shrink), int(frame.shape[0]/shrink)))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         score = np.log(cv2.Laplacian(frame, cv2.CV_32FC1).var())
         i += step
@@ -59,21 +60,22 @@ def incremental_check(focus_motor, start, step, max, window_size=15) -> float:
             max_pos = focus_motor.get_position()
 
         # If the current score is less than the average of previous scores, break (downward trend)
-        if len(score_window) == window_size and score < avg_prev - 0.0125:
+        if len(score_window) == window_size and score < avg_prev - 0.025:
             break
 
     focus_motor.move_to(max_pos)
     time.sleep(1)
     return max_score
 
-def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2, direction = 1, change_factor = 1):
+def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2, direction = 1, change_factor = 1, shrink=2, bbox=(432,137,1782,892)):
     focus_speed = 5
     prev_score = None
     timer = 0
     ok_blur = 4.5
 
     while(True):        
-        frame =  np.array(ImageGrab.grab(bbox=(200,200,1160,840)))
+        frame =  np.array(ImageGrab.grab(bbox=bbox))
+        frame = cv2.resize(frame, (int(frame.shape[1]/shrink), int(frame.shape[0]/shrink)))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
         if q_stop and keyboard.is_pressed('q'):

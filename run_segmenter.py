@@ -41,9 +41,9 @@ else:
 
 g1 = cv2.imread(f'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/{filename}')
 g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-shrink = 0.25
-g1 = cv2.resize(g1, (int(g1.shape[1]/shrink), int(g1.shape[0]/shrink)))
-f = focus_disk(g1, int(355/shrink), invert=True)
+grow = 3
+g1 = cv2.resize(g1, (int(g1.shape[1]*grow), int(g1.shape[0]*grow)))
+f = focus_disk(g1, int(410*grow), invert=True)
 
 # Initialize Segmenter
 watch.clock()
@@ -58,6 +58,8 @@ segmenter.label_masks()
 watch.clock()
 result = segmenter.prettify()
 watch.clock()
+
+print(g1.shape)
 
 try:
     i = int(sys.argv[2])

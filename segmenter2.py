@@ -3,7 +3,7 @@ import numpy as np
 from scipy.ndimage import label
 
 class Segmenter():
-    def __init__(self, img, material, colors=None, numbers=None, min_area = 50, max_area = 10000000, magnification=100, k=3, bg_percentile = 50):
+    def __init__(self, img, material, colors=None, numbers=None, min_area = 50, max_area = 10000000, magnification=100, k=3, bg_percentile = 50, l_mean=True,):
         self.img = img
         self.size = img.shape[:2]
         self.target_bg_lab = material.target_bg_lab
@@ -14,6 +14,7 @@ class Segmenter():
         self.min_area = min_area
         self.max_area = max_area
         self.bg_percentile = bg_percentile
+        self.l_mean = l_mean
         
         self.lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB).astype(np.int16)
         self.lab[:,:,0] = self.lab[:,:,0] * 100.0/255.0
@@ -73,7 +74,10 @@ class Segmenter():
 
     def adjust_layer_labels(self):
         if self.segment_edges:
-            l = np.percentile(self.lab[:,:,0][self.bg_mask], self.bg_percentile)
+            if self.l_mean:
+                l = np.mean(self.lab[:,:,0][self.bg_mask])
+            else:
+                l = np.percentile(self.lab[:,:,0][self.bg_mask], self.bg_percentile)
             a = np.mean(self.lab[:,:,1][self.bg_mask])
             b = np.mean(self.lab[:,:,2][self.bg_mask])
             self.avg_bg_lab = np.array([l, a, b])

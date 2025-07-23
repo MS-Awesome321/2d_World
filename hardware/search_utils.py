@@ -28,7 +28,7 @@ class GetOptFocus():
         for i in self.range:
             focus_motor.move_to(start_pos + i)
             time.sleep(abs(0.0055 * i))
-            frame =  np.array(ImageGrab.grab(bbox=(200,200,960,640)))
+            frame =  np.array(ImageGrab.grab(bbox=(432,137,1782,892)))
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             score = cv2.Laplacian(frame, cv2.CV_32FC1).var()
             score = np.log(score)
@@ -53,11 +53,11 @@ class WF():
 
         temp = focus_motor.get_pos()
         d = 1 if self.counter//n_cols % 2 == 0 else -1
-        final_score = autofocus(auto_stop=True, q_stop=True, focus=focus_motor, timeup=3, direction=d, change_factor=0.25)
+        final_score = autofocus(auto_stop=True, q_stop=True, focus=focus_motor, timeup=3, direction=d, change_factor=1)
         focus_motor.position = temp
 
         if self.take_pic:
-            bgr_frame =  np.array(ImageGrab.grab(bbox=(200,200,1160,840)))
+            bgr_frame =  np.array(ImageGrab.grab(bbox=(432,137,1782,892)))
             frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
             cv2.imwrite(f'{self.photo_dir}/test_{self.counter}.jpg', frame)
 
