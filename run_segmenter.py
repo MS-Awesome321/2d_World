@@ -26,7 +26,7 @@ colors_by_layer = {
 # image_path = os.listdir("../monolayerGraphene/monolayer_Graphene/")[int(sys.argv[1])]
 filename = sys.argv[1]
 
-if 'M100' in filename:
+if 'M100' in filename or 'm100' in filename:
     magnification = 100
 elif 'M50' in filename:
     magnification = 50
@@ -39,7 +39,7 @@ elif 'M5' in filename:
 else:
     magnification = 10
 
-g1 = cv2.imread(f'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/{filename}')
+g1 = cv2.imread(f'/Users/mayanksengupta/Desktop/recent_run_2d_World/photo_dir/{filename}')
 g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
 grow = 3
 g1 = cv2.resize(g1, (int(g1.shape[1]*grow), int(g1.shape[0]*grow)))
@@ -47,10 +47,13 @@ f = focus_disk(g1, int(410*grow), invert=True)
 
 # Initialize Segmenter
 watch.clock()
-segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=magnification, min_area=1000)
+segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=magnification, min_area=500)
 print(segmenter.edge_method.mag)
 watch.clock()
-segmenter.make_masks(black_zone_mask=f, segment_edges=True)
+segmenter.make_masks(
+    black_zone_mask=None, 
+    segment_edges=True
+)
 watch.clock()
 segmenter.get_all_avg_lab()
 watch.clock()
@@ -93,12 +96,12 @@ axs[1].imshow(result, cmap='inferno')
 axs[1].axis('off')
 axs[1].format_coord = format_coord
 
-if i is not None:
+if i is not None and i <= segmenter.num_masks:
     centroid = segmenter.mask_coords(i)
     print(centroid)
     print(g1.shape)
     axs[2].scatter(*centroid[::-1])
-axs[2].imshow(segmenter.masks, cmap='inferno')
+axs[2].imshow(segmenter.bg_mask, cmap='inferno')
 axs[2].axis('off')
 axs[2].format_coord = format_coord
 

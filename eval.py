@@ -24,8 +24,8 @@ colors_by_layer = {
 
 # image_path = os.listdir("../monolayerGraphene/monolayer_Graphene/")[int(sys.argv[1])]
 
-dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir'
-result_dir = 'C:/Users/admin/Desktop/2d_World/hardware/results'
+dir = '/Users/mayanksengupta/Desktop/2d_World/hardware/photo_dir/most_recent_run'
+result_dir = '/Users/mayanksengupta/Desktop/2d_World/hardware/photo_dir/most_recent_run'
 files = os.listdir(dir)
 
 monolayer_sizes = np.array([])
@@ -53,21 +53,24 @@ for filename in tqdm(files):
     #     magnification = 20
     #     folder = 'M20'
 
+    if 'm100' not in filename or 'segmented' in filename:
+        continue
+
     g1 = cv2.imread(f'{dir}/{filename}')
     try:
         g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
         shrink = 0.25
         g1 = cv2.resize(g1, (int(g1.shape[1]/shrink), int(g1.shape[0]/shrink)))
-        f = focus_disk(g1, int(275/shrink), invert=True)
+        f = focus_disk(g1, int(355/shrink), invert=True)
 
         # Initialize Segmenter
-        segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=10, min_area=500)
-        segmenter.process_frame(black_zone_mask=f, segment_edges=True)
+        segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=100, min_area=500)
+        segmenter.process_frame(black_zone_mask=f, segment_edges=False)
         result = segmenter.prettify()
         result = (255 * result).astype(np.uint8)
         result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
 
-        cv2.imwrite(f'{result_dir}/{filename}', result)
+        cv2.imwrite(f'{result_dir}/segmented_{filename}', result)
 
         mono_size = segmenter.largest_flakes('monolayer')
         bi_size = segmenter.largest_flakes('bilayer')
