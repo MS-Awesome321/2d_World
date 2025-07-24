@@ -25,7 +25,7 @@ def color_count_score(img, bins=16, shrink = 4):
     
     return len(unique_colors)
 
-def incremental_check(focus_motor, start, step, max, window_size=5, shrink=2, bbox=(432,137,1782,892)) -> float:
+def incremental_check(focus_motor, start, step, max, window_size=10, shrink=2, bbox=(432,137,1782,892)) -> float:
     focus_motor.rotate_relative(start)
     time.sleep(0.006 * abs(start))
 
@@ -53,7 +53,7 @@ def incremental_check(focus_motor, start, step, max, window_size=5, shrink=2, bb
         score_window.append(score)
         avg_prev = sum(list(score_window)[:-1]) / (len(score_window)-1) if len(score_window) > 1 else score
 
-        print(i, score, avg_prev)
+        # print(i, score, avg_prev)
 
         if score > max_score:
             max_score = score
@@ -79,7 +79,7 @@ def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2, direction
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
         if q_stop and keyboard.is_pressed('q'):
-            return True
+            return 0
 
         # Compute Blur Score
         score = cv2.Laplacian(frame, cv2.CV_32FC1).var()
@@ -111,7 +111,7 @@ def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2, direction
             else:
                 focus_speed = 0
                 if auto_stop:
-                    return True
+                    return score
 
             focus.rotate_relative(change_factor * direction * focus_speed)
             time.sleep(0.0055 * focus_speed)

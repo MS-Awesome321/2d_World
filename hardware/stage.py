@@ -182,8 +182,11 @@ class Stage:
             if self.focus_motor is not None:
                 self.focus_motor.move_to(z)
             
+            self.x_motor.wait_for_stop()
+            self.y_motor.wait_for_stop()
+
             if wf is not None:
-                wf(self.focus_motor, self.n_cols)
+                wf(self, coords, (x, y, z), self.focus_motor, self.n_cols)
             if opt is not None:
                 opt((x,y,z), self.focus_motor)
             for method in methods:

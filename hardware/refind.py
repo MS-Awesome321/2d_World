@@ -27,12 +27,12 @@ test_stage = Stage(x, y, focus_comport='COM5', magnification=10)
 test_stage.set_direction(180)
 test_stage.set_home()
 test_stage.set_chip_dims(1, 1.1)
-z_plane = [-3820, -4110, -210]
+z_plane = [-1520, -3450, -1900]
 
 
 def get_exact_location(coord, flake_location, frame_dims):
-    coord[0] += 84_400*(flake_location[1]/frame_dims[1] - 0.5)
-    coord[1] += 56_300*(flake_location[0]/frame_dims[0] - 0.5)
+    coord[0] += 103_900*(flake_location[1]/frame_dims[1] - 0.5)
+    coord[1] += 57_700*(flake_location[0]/frame_dims[0] - 0.5)
     return coord
 
 coords = test_stage.get_snake(z_plane)
@@ -64,7 +64,7 @@ lens.rotate_to_position(4)
 final_score1 = incremental_check(test_stage.focus_motor, 0, 5, 1000)
 print(final_score1)
 
-bgr_frame =  np.array(ImageGrab.grab(bbox=(200,200,1160,840)))
+bgr_frame =  np.array(ImageGrab.grab(bbox=(432,137,1782,892)))
 frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
 cv2.imwrite(f'{photo_dir}/m100_{f_num}.jpg', frame)
 

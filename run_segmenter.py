@@ -102,7 +102,7 @@ axs[2].imshow(segmenter.masks, cmap='inferno')
 axs[2].axis('off')
 axs[2].format_coord = format_coord
 
-axs[3].imshow(segmenter.edges, cmap='inferno')
+axs[3].imshow(segmenter.bg_mask, cmap='inferno')
 axs[3].axis('off')
 axs[3].format_coord = format_coord
 

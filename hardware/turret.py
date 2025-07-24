@@ -15,12 +15,15 @@ class Turret:
             timeout=self.timeout
         )
 
-    def rotate_to_position(self, pos):
+    def rotate_to_position(self, pos, wait=False):
         cmd = f'cRDC{pos}{self.terminator}'
         self.serial_port.write(cmd.encode())
-        msg = self.response()
-        time.sleep(0.1)
-        return msg == 'oRDC'
+        
+        if wait:
+            msg = self.response()
+            return msg == 'oRDC'
+        else:
+            return True
 
     def response(self):
         response = self.serial_port.readline().decode().strip()

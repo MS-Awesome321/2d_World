@@ -1,5 +1,5 @@
 from stage import Stage
-from search_utils import WF, sort_results
+from search_utils import WF, WF_M100, sort_results, clear_results
 
 x = '27503936'
 y = '27503951'
@@ -9,7 +9,7 @@ test_stage = Stage(x, y, focus_comport='COM5', magnification=10)
 try:
     test_stage.set_direction(180)
     test_stage.set_home()
-    test_stage.set_chip_dims(1, 1.1)
+    test_stage.set_chip_dims(1, 1.15)
     test_stage.x_motor.setup_velocity(max_velocity=1_000_000, acceleration=2_000_000)
     test_stage.y_motor.setup_velocity(max_velocity=1_000_000, acceleration=2_000_000)
 
@@ -21,8 +21,9 @@ try:
     # plt.plot(coords[:,0], coords[:,1], '-o')
     # plt.show()
 
-    wf = WF('C:/Users/admin/Desktop/2d_World/hardware/photo_dir', take_pic=True)
-    z_corners = [-3820, -4110, -210]
+    wf = WF_M100('C:/Users/admin/Desktop/2d_World/hardware/photo_dir', 'COM7', take_pic=True)
+    z_corners = [-1520, -3450, -1900]
+    clear_results('results.txt')
     test_stage.start_snake(z_corners=z_corners, wf = wf.wait_focus_and_click)
 
 
