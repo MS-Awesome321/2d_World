@@ -1,13 +1,14 @@
 import os
 from stage import Stage
 import time
-from autofocus import incremental_check
+from autofocus import incremental_check, autofocus
 import numpy as np
 from PIL import ImageGrab
 import cv2
 from turret import Turret
 from tqdm import tqdm
 import keyboard
+import sys
 
 result_txt = 'results.txt'
 
@@ -27,8 +28,10 @@ photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir'
 test_stage = Stage(x, y, focus_comport='COM5', magnification=10)
 test_stage.set_direction(180)
 test_stage.set_home()
-test_stage.set_chip_dims(1, 1.1)
-z_plane = [-1520, -3450, -1900]
+test_stage.set_chip_dims(1.7, 0.86)
+z_plane = [-4480, -5250, -830]
+test_stage.x_motor.setup_velocity(max_velocity=4_000_000, acceleration=8_000_000)
+test_stage.y_motor.setup_velocity(max_velocity=4_000_000, acceleration=8_000_000)
 
 
 def get_exact_location(coord, flake_location, frame_dims):
@@ -36,48 +39,61 @@ def get_exact_location(coord, flake_location, frame_dims):
     coord[1] += 57_700*(flake_location[0]/frame_dims[0] - 0.5)
     return coord
 
-coords = test_stage.get_snake(z_plane)
+coords = np.stack(test_stage.get_snake(z_plane), axis=0)
 
 m_fnum = lines[2][:-1].split(' ')
 m_x, m_y = lines[4][:-1].split(' '), lines[5][:-1].split(' ')
+m_areas = lines[0][:-1].split(' ')
 
 b_fnum = lines[3][:-1].split(' ')
 b_x, b_y = lines[6][:-1].split(' '), lines[7][:-1].split(' ')
+b_areas = lines[1][:-1].split(' ')
 
-f_nums = m_fnum + b_fnum
-x_s, y_s = m_x + b_x, m_y + b_y
+f_nums = np.array([int(e) for e in m_fnum + b_fnum])
+x_s, y_s = np.array([float(e) for e in m_x + b_x]), np.array([float(e) for e in m_y + b_y])
+areas = np.array([int(e) for e in m_areas + b_areas])
 
-counter = 0
+idxs = np.argsort(areas)[::-1]
+num_top_matches = int(sys.argv[1])
+f_nums = f_nums[idxs][:num_top_matches]
+x_s, y_s = x_s[idxs][:num_top_matches], y_s[idxs][:num_top_matches]
+
+poi = coords[f_nums]
+z_vals = poi[:, -1]
+idxs = np.argsort(z_vals)[::-1]
+poi = poi[idxs]
+f_nums = f_nums[idxs]
+x_s, y_s = x_s[idxs], y_s[idxs]
+
+temp = test_stage.focus_motor.get_pos()
+incremental_check(test_stage.focus_motor, 0, 10, 1000, backpedal = True, auto_direction=True, slope_threshold=-0.025) # Realign focus at the start
+test_stage.focus_motor.position = temp
+
 
 try:
     lens.rotate_to_position(4)
 
-    for i in tqdm(range(len(m_fnum))):
+    for i in tqdm(range(num_top_matches)):
         if keyboard.is_pressed('q'):
             break
 
-        f_num = int(f_nums[i])
-        x, y = float(x_s[i]), float(y_s[i])
+        f_num = f_nums[i]
+        x, y = x_s[i], y_s[i]
 
-        coord = get_exact_location(coords[f_num], (x, y), (2265, 4050))
+        coord = get_exact_location(poi[i], (x, y), (2265, 4050))
         coord = [int(e) for e in coord.tolist()]
-        coord[-1] += -200
-        # print(coord)
-
-        test_stage.x_motor.setup_velocity(max_velocity=4_000_000, acceleration=8_000_000)
-        test_stage.y_motor.setup_velocity(max_velocity=4_000_000, acceleration=8_000_000)
-
         test_stage.move_to(coord)
 
-        final_score1 = incremental_check(test_stage.focus_motor, 0, 5, 800)
-        # print(final_score1)
+        time.sleep(0.5)
+        final_frame = incremental_check(test_stage.focus_motor, 0, 5, 600)
 
-        bgr_frame =  np.array(ImageGrab.grab(bbox=(432,137,1782,892)))
-        frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
-        cv2.imwrite(f'{photo_dir}/m_100/m100_{f_num}_{counter}.jpg', frame)
-        counter += 1
+        if final_frame is not None:
+            cv2.imwrite(f'{photo_dir}/m_100/m100_{f_num}_{i}.jpg', final_frame)
+        else:
+            print(f'{f_num} {i} is None')
 
-except KeyboardInterrupt:
+except Exception as e:
+    print(e)
     pass
 
 lens.rotate_to_position(5)

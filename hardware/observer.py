@@ -1,6 +1,6 @@
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from livesegment import segment
+from livesegment import LiveSegment
 import time
 import os
 
@@ -19,9 +19,23 @@ class NewFileHandler(FileSystemEventHandler):
         self.method(filename)
 
 if __name__ == "__main__":
-    photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir'
-    event_handler = NewFileHandler()
-    event_handler.set_run_method(segment)
+    import sys 
+
+    mag = int(sys.argv[1])
+    if mag == 10:
+        photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir'
+        result_dir = 'C:/Users/admin/Desktop/2d_World/hardware/results'
+        event_handler = NewFileHandler()
+        event_handler.set_run_method(LiveSegment(photo_dir, result_dir, 10))
+    elif mag == 100:
+        photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/m_100'
+        result_dir = 'C:/Users/admin/Desktop/2d_World/hardware/results/m_100'
+        event_handler = NewFileHandler()
+        event_handler.set_run_method(LiveSegment(photo_dir, result_dir, 100))
+    else:
+        raise ValueError('Invalid Magnification Given.')
+
+
     observer = Observer()
     observer.schedule(event_handler, path=photo_dir, recursive=False)
     observer.start()

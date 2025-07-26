@@ -38,50 +38,60 @@ def append_to_line(line, arr):
     else:
         return arr_str + '\n'
 
+class LiveSegment():
+    def __init__(self, input_dir, result_dir, magnification, min_area=1000):
+        self.input_dir = input_dir
+        self.result_dir = result_dir
+        self.magnification = magnification 
+        self.min_area = min_area
+        if magnification < 50:
+            self.segment_edges = True
+        else:
+            self.segment_edges = False
 
-def segment(filename):
-    g1 = cv2.imread(f'{dir}/{filename}')
-    g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-    grow = 3
-    g1 = cv2.resize(g1, (int(g1.shape[1]*grow), int(g1.shape[0]*grow)))
-    f = focus_disk(g1, int(410*grow), invert=True)
+    def __call__(self, filename):
+        g1 = cv2.imread(f'{self.input_dir}/{filename}')
+        g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
+        grow = 3
+        g1 = cv2.resize(g1, (int(g1.shape[1]*grow), int(g1.shape[0]*grow)))
+        f = focus_disk(g1, int(410*grow), invert=True)
 
-    segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=10, min_area=1000)
-    segmenter.process_frame(black_zone_mask=f, segment_edges=True)
-    result = segmenter.prettify()
-    result = (255 * result).astype(np.uint8)
-    result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
+        segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=self.magnification, min_area=self.min_area)
+        segmenter.process_frame(black_zone_mask=f, segment_edges=self.segment_edges)
+        result = segmenter.prettify()
+        result = (255 * result).astype(np.uint8)
+        result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
 
-    cv2.imwrite(f'{result_dir}/{filename}', result)
+        cv2.imwrite(f'{self.result_dir}/{filename}', result)
 
-    mono_size, mono_locations = segmenter.largest_flakes('monolayer')
-    bi_size, bi_locations = segmenter.largest_flakes('bilayer')
+        mono_size, mono_locations = segmenter.largest_flakes('monolayer')
+        bi_size, bi_locations = segmenter.largest_flakes('bilayer')
 
-    if 'test_' in filename:
-        i = int(filename[filename.index('_') + 1:filename.index('.')])
-        mono_frame_nums = i*np.ones_like(mono_size)
-        bi_frame_nums = i*np.ones_like(bi_size)
+        if 'test_' in filename:
+            i = int(filename[filename.index('_') + 1:filename.index('.')])
+            mono_frame_nums = i*np.ones_like(mono_size)
+            bi_frame_nums = i*np.ones_like(bi_size)
 
-        if os.path.exists(result_txt):
-            with open(result_txt, 'r') as f:
-                lines = f.readlines()
+            if os.path.exists(result_txt):
+                with open(result_txt, 'r') as f:
+                    lines = f.readlines()
 
-        if mono_locations is not None:
-            mono_locations = np.round(mono_locations, 2)
-            lines[0] = append_to_line(lines[0], mono_size)
-            lines[2] = append_to_line(lines[2], mono_frame_nums)
-            lines[4] = append_to_line(lines[4], mono_locations[:, 0])
-            lines[5] = append_to_line(lines[5], mono_locations[:, 1])
+            if mono_locations is not None:
+                mono_locations = np.round(mono_locations, 2)
+                lines[0] = append_to_line(lines[0], mono_size)
+                lines[2] = append_to_line(lines[2], mono_frame_nums)
+                lines[4] = append_to_line(lines[4], mono_locations[:, 0])
+                lines[5] = append_to_line(lines[5], mono_locations[:, 1])
 
-        if bi_locations is not None:
-            bi_locations = np.round(bi_locations, 2)
-            lines[1] = append_to_line(lines[1], bi_size)
-            lines[3] = append_to_line(lines[3], bi_frame_nums)
-            lines[6] = append_to_line(lines[6], bi_locations[:, 0])
-            lines[7] = append_to_line(lines[7], bi_locations[:, 1])
+            if bi_locations is not None:
+                bi_locations = np.round(bi_locations, 2)
+                lines[1] = append_to_line(lines[1], bi_size)
+                lines[3] = append_to_line(lines[3], bi_frame_nums)
+                lines[6] = append_to_line(lines[6], bi_locations[:, 0])
+                lines[7] = append_to_line(lines[7], bi_locations[:, 1])
 
-        # Write back to results.txt
-        with open(result_txt, 'w') as f:
-            f.writelines(lines)
+            # Write back to results.txt
+            with open(result_txt, 'w') as f:
+                f.writelines(lines)
 
-    return segmenter
+        return segmenter

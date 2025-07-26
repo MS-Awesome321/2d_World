@@ -89,24 +89,24 @@ class Focus:
     
     def move_to(self, target, wait=True):
         dist = self.position - target
-    
+        
         while abs(dist) > 0:
             if abs(dist) < 2000:
                 self.rotate_relative(dist)
                 if wait:
-                    time.sleep(0.0055 * abs(dist))
+                    time.sleep(0.006 * abs(dist))
                 dist = 0
 
             elif dist >= 2000:
                 self.rotate_relative(1995)
                 if wait:
-                    time.sleep(0.0055 * 1995)
+                    time.sleep(0.006 * 1995)
                 dist -= 1995
 
             elif dist <= -2000:
                 self.rotate_relative(-1995)
                 if wait:
-                    time.sleep(0.0055 * 1995)
+                    time.sleep(0.006 * 1995)
                 dist += 1995
         return self.position
     

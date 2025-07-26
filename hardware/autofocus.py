@@ -25,47 +25,86 @@ def color_count_score(img, bins=16, shrink = 4):
     
     return len(unique_colors)
 
-def incremental_check(focus_motor, start, step, max, window_size=10, shrink=2, bbox=(432,137,1782,892)) -> float:
+def incremental_check(focus_motor, start, step, max, window_size=5, shrink=2, bbox=(432,137,1782,892), verbose = False, backpedal=False, auto_direction=False, slope_threshold=-0.05):
     focus_motor.rotate_relative(start)
     time.sleep(0.006 * abs(start))
 
-    frame = np.array(ImageGrab.grab(bbox=bbox))
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    og_frame = np.array(ImageGrab.grab(bbox=bbox))
+    og_frame = cv2.cvtColor(og_frame, cv2.COLOR_BGR2RGB)
+    frame = cv2.resize(og_frame, (int(og_frame.shape[1]/shrink), int(og_frame.shape[0]/shrink)))
     score = np.log(cv2.Laplacian(frame, cv2.CV_32FC1).var())
+    first_score = score
 
     max_score = score
-    max_pos = focus_motor.get_position()
+    max_frame = None
+    min_slope = 0
     i = start
+    flipped = False
 
-    # Use a deque for a moving window of scores
     score_window = collections.deque([score], maxlen=window_size)
 
     while abs(i) < abs(max):
+        if keyboard.is_pressed('q'):
+            break
+
         focus_motor.rotate_relative(step)
         time.sleep(0.006 * abs(step))
 
-        frame = np.array(ImageGrab.grab(bbox=bbox))
-        frame = cv2.resize(frame, (int(frame.shape[1]/shrink), int(frame.shape[0]/shrink)))
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        og_frame = np.array(ImageGrab.grab(bbox=bbox))
+        og_frame = cv2.cvtColor(og_frame, cv2.COLOR_BGR2RGB)
+        frame = cv2.resize(og_frame, (int(og_frame.shape[1]/shrink), int(og_frame.shape[0]/shrink)))
         score = np.log(cv2.Laplacian(frame, cv2.CV_32FC1).var())
         i += step
 
-        score_window.append(score)
-        avg_prev = sum(list(score_window)[:-1]) / (len(score_window)-1) if len(score_window) > 1 else score
-
-        # print(i, score, avg_prev)
-
         if score > max_score:
             max_score = score
-            max_pos = focus_motor.get_position()
+            max_frame = og_frame
 
-        # If the current score is less than the average of previous scores, break (downward trend)
-        if len(score_window) == window_size and score < avg_prev - 0.025:
-            break
+        score_window.append(score)
 
-    focus_motor.move_to(max_pos)
-    time.sleep(1)
-    return max_score
+        if len(score_window) == window_size:
+            avg_slope = (score_window[-1] - score_window[0]) / (window_size)
+
+            if verbose:
+                print(i, score, avg_slope)
+
+            if avg_slope < min_slope:
+                min_slope = avg_slope
+            
+            if avg_slope < slope_threshold:
+                if auto_direction and (not flipped and score < first_score):
+                    step *= -1
+                    flipped = True
+                    score_window = collections.deque([], maxlen=window_size)
+                    time.sleep(1)
+                else:
+                    break
+
+
+    # Backpedal
+    if backpedal:
+        s = -1 * step // 4
+        if s > 0 and abs(s) < 1:
+            s = 1
+        elif s < 0 and abs(s) < 1:
+            s = -1
+            
+        for _ in range(max):
+            frame = np.array(ImageGrab.grab(bbox=bbox))
+            frame = cv2.resize(frame, (int(frame.shape[1]/shrink), int(frame.shape[0]/shrink)))
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            score = np.log(cv2.Laplacian(frame, cv2.CV_32FC1).var())
+
+            if verbose:
+                print(score)
+
+            if abs(score - max_score) < 0.05:
+                break
+
+            focus_motor.rotate_relative(s)
+            time.sleep(0.006 * abs(step)) # slowed because of how much slip this motor has
+
+    return max_frame
 
 def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2, direction = 1, change_factor = 1, shrink=2, bbox=(432,137,1782,892)):
     focus_speed = 5

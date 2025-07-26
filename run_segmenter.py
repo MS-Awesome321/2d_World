@@ -7,6 +7,7 @@ from segmenter2 import Segmenter
 from material import graphene
 import warnings
 from utils import Stopwatch, focus_disk
+from scipy.interpolate import griddata
 
 watch = Stopwatch()
 
@@ -39,7 +40,7 @@ elif 'M5' in filename:
 else:
     magnification = 10
 
-g1 = cv2.imread(f'/Users/mayanksengupta/Desktop/recent_run_2d_World/photo_dir/{filename}')
+g1 = cv2.imread(f'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/{filename}')
 g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
 grow = 3
 g1 = cv2.resize(g1, (int(g1.shape[1]*grow), int(g1.shape[0]*grow)))
@@ -51,8 +52,8 @@ segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=magnif
 print(segmenter.edge_method.mag)
 watch.clock()
 segmenter.make_masks(
-    black_zone_mask=None, 
-    segment_edges=True
+    black_zone_mask=f, 
+    segment_edges=False
 )
 watch.clock()
 segmenter.get_all_avg_lab()
@@ -101,11 +102,28 @@ if i is not None and i <= segmenter.num_masks:
     print(centroid)
     print(g1.shape)
     axs[2].scatter(*centroid[::-1])
-axs[2].imshow(segmenter.bg_mask, cmap='inferno')
+axs[2].imshow(segmenter.masks, cmap='inferno')
 axs[2].axis('off')
 axs[2].format_coord = format_coord
 
-axs[3].imshow(segmenter.bg_mask, cmap='inferno')
+bg_mask = segmenter.masks == segmenter.bg_mask_id
+bg_indices = np.argwhere(bg_mask)
+
+points = []
+values = []
+chosen = np.random.choice(len(bg_indices), size=10, replace=False)
+for idx in chosen:
+    x, y = bg_indices[idx]
+    points.append([x, y])
+    values.append(segmenter.lab[x, y, 0])
+
+points = np.array(points)
+values = np.array(values)
+
+grid_x, grid_y = np.mgrid[0:segmenter.lab.shape[0]:100j, 0:segmenter.lab.shape[1]:200j]
+l_bg = griddata(points, values, (grid_x, grid_y), method='cubic')
+
+axs[3].imshow(l_bg, cmap='inferno')
 axs[3].axis('off')
 axs[3].format_coord = format_coord
 

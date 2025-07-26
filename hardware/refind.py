@@ -7,6 +7,8 @@ from PIL import ImageGrab
 import cv2
 from turret import Turret
 import sys
+sys.path.append('C:/Users/admin/Desktop/2d_World/')
+from utils import Stopwatch
 
 result_txt = 'results.txt'
 
@@ -26,8 +28,8 @@ photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir'
 test_stage = Stage(x, y, focus_comport='COM5', magnification=10)
 test_stage.set_direction(180)
 test_stage.set_home()
-test_stage.set_chip_dims(1, 1.1)
-z_plane = [-1520, -3450, -1900]
+test_stage.set_chip_dims(1.7, 0.86)
+z_plane = [-4480, -5250, -830]
 
 
 def get_exact_location(coord, flake_location, frame_dims):
@@ -51,6 +53,8 @@ elif 'b' in mono_bi:
 else:
     raise ValueError('Bad argument for monolayer/bilayer')
 
+watch = Stopwatch()
+
 coord = get_exact_location(coords[f_num], (x, y), (2265, 4050))
 coord = [int(e) for e in coord.tolist()]
 print(coord)
@@ -58,15 +62,28 @@ print(coord)
 test_stage.x_motor.setup_velocity(max_velocity=4_000_000, acceleration=8_000_000)
 test_stage.y_motor.setup_velocity(max_velocity=4_000_000, acceleration=8_000_000)
 
+watch.clock()
 test_stage.move_to(coord)
+watch.clock()
+
+# temp = test_stage.focus_motor.get_pos()
+# d = 1 if (test_stage.home_location[-1] - coord[-1] > 0) else -1
+# final_score = autofocus(auto_stop=True, q_stop=True, focus=test_stage.focus_motor, timeup=5, change_factor=0.125, direction=d)
+# test_stage.focus_motor.position = temp
+
 lens.rotate_to_position(4)
 
-final_score1 = incremental_check(test_stage.focus_motor, 0, 5, 1000)
-print(final_score1)
+watch.clock()
+time.sleep(1)
+final_frame = incremental_check(test_stage.focus_motor, 0, 5, 1000)
+watch.clock()
 
-bgr_frame =  np.array(ImageGrab.grab(bbox=(432,137,1782,892)))
-frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
-cv2.imwrite(f'{photo_dir}/m100_{f_num}.jpg', frame)
+cv2.imwrite(f'{photo_dir}/m100_{f_num}.jpg', final_frame)
+
+cv2.namedWindow("M100", cv2.WINDOW_NORMAL)
+cv2.imshow('M100', final_frame)
+cv2.waitKey(0)
+print(f_num)
 
 lens.rotate_to_position(5)
 test_stage.move_home()

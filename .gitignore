@@ -3,5 +3,6 @@ hardware/.DS_Store
 .DS_Store
 hardware/photo_dir/
 hardware/results/
+hardware/old_m100_results/
 __pycache__
 hardware/__pycache__/

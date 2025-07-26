@@ -24,8 +24,8 @@ colors_by_layer = {
 
 # image_path = os.listdir("../monolayerGraphene/monolayer_Graphene/")[int(sys.argv[1])]
 
-dir = '/Users/mayanksengupta/Desktop/2d_World/hardware/photo_dir/most_recent_run'
-result_dir = '/Users/mayanksengupta/Desktop/2d_World/hardware/photo_dir/most_recent_run'
+dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/m_100'
+result_dir = 'C:/Users/admin/Desktop/2d_World/hardware/results/'
 files = os.listdir(dir)
 
 monolayer_sizes = np.array([])
@@ -59,12 +59,12 @@ for filename in tqdm(files):
     g1 = cv2.imread(f'{dir}/{filename}')
     try:
         g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-        shrink = 0.25
-        g1 = cv2.resize(g1, (int(g1.shape[1]/shrink), int(g1.shape[0]/shrink)))
-        f = focus_disk(g1, int(355/shrink), invert=True)
+        grow = 6
+        g1 = cv2.resize(g1, (int(g1.shape[1] * grow), int(g1.shape[0] * grow)))
+        f = focus_disk(g1, int(410 * grow/2), invert=True)
 
         # Initialize Segmenter
-        segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=100, min_area=500)
+        segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=100, min_area=200)
         segmenter.process_frame(black_zone_mask=f, segment_edges=False)
         result = segmenter.prettify()
         result = (255 * result).astype(np.uint8)
@@ -80,7 +80,8 @@ for filename in tqdm(files):
             mono_frame_nums = np.concatenate((mono_frame_nums, i*np.ones_like(mono_size)))
             bilayer_sizes = np.concatenate((bilayer_sizes, bi_size))
             bi_frame_nums = np.concatenate((bi_frame_nums, i*np.ones_like(bi_size)))
-    except:
+    except Exception as e:
+        print(e)
         print(f'{filename} corrupted')
 
 sorted_array = np.argsort(monolayer_sizes)[::-1]

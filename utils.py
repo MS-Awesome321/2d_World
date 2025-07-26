@@ -76,7 +76,8 @@ class Stopwatch():
 
 def focus_disk(img, radius=200, invert=False):
     d = disk(radius)
-    d = d[radius - img.shape[0]//2 : radius + img.shape[0]//2 + 1, :]
+    add = 0 if img.shape[0] % 2 == 0 else 1
+    d = d[radius - img.shape[0]//2 : radius + img.shape[0]//2 + add, :]
     pad = np.zeros((img.shape[0], img.shape[1]//2 - radius))
     d = np.concatenate([d, pad], axis=1)
     d = np.concatenate([pad, d], axis=1)  

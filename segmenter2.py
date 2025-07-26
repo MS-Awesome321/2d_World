@@ -86,7 +86,13 @@ class Segmenter():
             b = np.mean(self.lab[:,:,2][self.bg_mask])
             self.avg_bg_lab = np.array([l, a, b])
         else:
-            self.avg_bg_lab = self.avg_labs[self.bg_mask_id]
+            if self.l_mean:
+                self.avg_bg_lab = self.avg_labs[self.bg_mask_id]
+            else:
+                l = np.percentile(self.lab[:,:,0][self.masks == self.bg_mask_id], self.bg_percentile)
+                a = np.mean(self.lab[:,:,1][self.masks == self.bg_mask_id])
+                b = np.mean(self.lab[:,:,2][self.masks == self.bg_mask_id])
+                self.avg_bg_lab = np.array([l, a, b])
 
         adjustment_factor = self.avg_bg_lab - np.array(self.target_bg_lab)
         new_layer_labels = {}

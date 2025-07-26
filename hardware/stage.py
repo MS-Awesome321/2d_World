@@ -186,7 +186,7 @@ class Stage:
             self.y_motor.wait_for_stop()
 
             if wf is not None:
-                wf(self, coords, (x, y, z), self.focus_motor, self.n_cols)
+                wf(self.focus_motor, self.n_cols)
             if opt is not None:
                 opt((x,y,z), self.focus_motor)
             for method in methods:
@@ -208,9 +208,13 @@ class Stage:
         
         return True
     
-    def move_to(self, location):
+    def move_to(self, location, wait=False):
         for i in range(len(location)):
             self.motors[i].move_to(location[i])
+
+        if wait:
+            for i in range(len(location)):
+                self.motors[i].wait_for_stop()
 
     def move_home(self):
         self.move_to(self.home_location)
@@ -264,6 +268,13 @@ class Stage:
             elif key.name == 'm':
                 current_pos = self.get_pos()
                 print(np.array(current_pos) - np.array(prev_pos))
+                prev_pos = current_pos
+                time.sleep(0.25)
+
+            elif key.name == 'M':
+                current_pos = self.get_pos()
+                print(np.array(current_pos) - np.array(prev_pos))
+                print(f'{(current_pos[0] - prev_pos[0])/610_000} in x {(current_pos[1] - prev_pos[1])/610_000} in')
                 prev_pos = current_pos
                 time.sleep(0.25)
 
