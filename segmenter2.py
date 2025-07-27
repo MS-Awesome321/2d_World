@@ -1,9 +1,10 @@
 import cv2
 import numpy as np
 from scipy.ndimage import label
+from scipy.interpolate import griddata
 
 class Segmenter():
-    def __init__(self, img, material, colors=None, numbers=None, min_area = 50, max_area = 10000000, magnification=100, k=3, bg_percentile = 50, l_mean=True,):
+    def __init__(self, img, material, colors=None, numbers=None, min_area = 50, max_area = 10000000, magnification=100, k=3, bg_percentile = 50, l_mean=True, focus_disks=[]):
         self.img = img
         self.size = img.shape[:2]
         self.target_bg_lab = material.target_bg_lab
@@ -15,13 +16,19 @@ class Segmenter():
         self.max_area = max_area
         self.bg_percentile = bg_percentile
         self.l_mean = l_mean
+        self.focus_disks = focus_disks
         
         self.lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB).astype(np.int16)
         self.lab[:,:,0] = self.lab[:,:,0] * 100.0/255.0
         self.lab[:,:,1] -= 128
         self.lab[:,:,2] -= 128
 
-    def make_masks(self, black_zone_mask = None, segment_edges = False):
+    def make_masks(self, segment_edges = False):
+        if len(self.focus_disks)>0:
+            black_zone_mask = self.focus_disks[0][0]
+        else:
+            black_zone_mask = None
+
         self.segment_edges = segment_edges
 
         self.edges = self.edge_method(self.img)
@@ -34,10 +41,9 @@ class Segmenter():
 
         # Get BG mask
         self.bg_mask_id = np.argmax(self.mask_areas[1:]) + 1
+        self.bg_mask = self.masks == self.bg_mask_id
 
         if segment_edges:
-            self.bg_mask = self.masks == self.bg_mask_id
-
             # Relabel masks 
             if black_zone_mask is not None:
                 sin_bg = np.logical_not(self.edges)
@@ -75,6 +81,66 @@ class Segmenter():
         self.avg_labs = avg_labs
         # self.var_labs = np.linalg.norm(var_labs, axis=1)
         return avg_labs, var_labs
+    
+    def lab_equalize(self, num_points = 500):
+        points = []
+        values = []
+
+        # Inner Points
+        while len(points) < 3*num_points//4:
+            x = np.random.randint(low=0, high=self.lab.shape[1])
+            y = np.random.randint(low=0, high=self.lab.shape[0])
+            if self.bg_mask[y,x] != 0:
+                points.append(np.array([y, x]))
+                values.append(self.lab[y, x, 0])
+
+        # Outer Circle Points
+        i = 0
+        while len(points) < num_points:
+            r = self.focus_disks[0][1]
+            theta = i * np.pi / (num_points // 4)
+            x = int(r * np.cos(theta)) + self.lab.shape[1] // 2
+            y = int(r * np.sin(theta)) + self.lab.shape[0] // 2
+            i += 1
+
+            if not((x < 0 or x >= self.lab.shape[1]) or (y < 0 or y >= self.lab.shape[0])):
+                if self.bg_mask[y,x] != 0:
+                    points.append(np.array([y, x]))
+                    values.append(self.lab[y, x, 0])
+                else:
+                    i -= 0.5
+
+        # Corner points
+        x0 = self.lab.shape[1] // 2 - np.sqrt(np.pow(r, 2) - np.pow(self.lab.shape[0] // 2, 2))
+        y0 = 0
+        x0 = int(x0)
+        x1 = self.lab.shape[1] - x0
+        y1 = self.lab.shape[0] - 1
+
+        points.append(np.array([y0, x0]))
+        points.append(np.array([y0, x1]))
+        points.append(np.array([y1, x0]))
+        points.append(np.array([y1, x1]))
+
+        values.append(self.lab[y0, x0, 0])
+        values.append(self.lab[y0, x1, 0])
+        values.append(self.lab[y1, x0, 0])
+        values.append(self.lab[y1, x1, 0])
+
+        # Interpolation
+        points = np.stack(points, axis=0)
+        values = np.stack(values, axis=0)
+        grid_x, grid_y = np.mgrid[0:self.lab.shape[0]:self.lab.shape[0] * 1j, 0:self.lab.shape[1]:self.lab.shape[1] * 1j]
+        l_bg = griddata(points, values, (grid_x, grid_y), method='linear', fill_value=0)
+
+        # Return Result
+        l_bg[l_bg < 0] = 0
+        l_bg = l_bg.astype('int16')
+        self.lab[:,:,0] -= l_bg - int(self.target_bg_lab[0])
+        f2 = self.focus_disks[-1][0]
+        self.lab[:,:,0][f2] = 0
+        self.l_bg = l_bg
+        return l_bg
 
     def adjust_layer_labels(self):
         if self.segment_edges:
@@ -88,6 +154,7 @@ class Segmenter():
         else:
             if self.l_mean:
                 self.avg_bg_lab = self.avg_labs[self.bg_mask_id]
+                self.bg_mask = self.masks == self.bg_mask_id
             else:
                 l = np.percentile(self.lab[:,:,0][self.masks == self.bg_mask_id], self.bg_percentile)
                 a = np.mean(self.lab[:,:,1][self.masks == self.bg_mask_id])
@@ -103,15 +170,14 @@ class Segmenter():
         self.layer_labels = new_layer_labels
         # Add bg lab
         self.layer_labels[tuple(self.avg_bg_lab)] = 'bg'
-        second_bg_lab = (self.avg_bg_lab[0] - 10, self.avg_bg_lab[1] + 1.5, self.avg_bg_lab[2] + 0.5)
-        self.layer_labels[second_bg_lab] = 'bg'
+        # second_bg_lab = (self.avg_bg_lab[0] - 10, self.avg_bg_lab[1] + 1.5, self.avg_bg_lab[2] + 0.5)
+        # self.layer_labels[second_bg_lab] = 'bg'
         # third_bg_lab = (self.avg_bg_lab[0] + 3, self.avg_bg_lab[1], self.avg_bg_lab[2])
         # self.layer_labels[third_bg_lab] = 'bg'
         # third_bg_lab = (self.avg_bg_lab[0] - 1, self.avg_bg_lab[1] - 1, self.avg_bg_lab[2] - 0.1)
         # self.layer_labels[third_bg_lab] = 'bg'
 
     def label_masks(self):
-        self.adjust_layer_labels()
         self.mask_labels = []
 
         # Prepare layer label LABs and types as arrays/lists
@@ -133,8 +199,10 @@ class Segmenter():
                 label = layer_types[min_indices[idx]]
                 self.mask_labels.append(label)
 
-    def process_frame(self, black_zone_mask=None, segment_edges=False):
-        self.make_masks(black_zone_mask, segment_edges)
+    def process_frame(self, segment_edges=False):
+        self.make_masks(segment_edges)
+        self.adjust_layer_labels()
+        self.lab_equalize()
         self.get_all_avg_lab()
         self.label_masks()
 

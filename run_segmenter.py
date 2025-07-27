@@ -7,7 +7,7 @@ from segmenter2 import Segmenter
 from material import graphene
 import warnings
 from utils import Stopwatch, focus_disk
-from scipy.interpolate import griddata
+
 
 watch = Stopwatch()
 
@@ -40,23 +40,30 @@ elif 'M5' in filename:
 else:
     magnification = 10
 
-g1 = cv2.imread(f'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/{filename}')
+g1 = cv2.imread(f'/Users/mayanksengupta/Desktop/2d_World/hardware/photo_dir/{filename}')
 g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-grow = 3
+grow = 4
 g1 = cv2.resize(g1, (int(g1.shape[1]*grow), int(g1.shape[0]*grow)))
-f = focus_disk(g1, int(410*grow), invert=True)
+rad = 260
+rad *= grow
+rad = int(rad)
+f = focus_disk(g1, rad, invert=True)
+f2 = focus_disk(g1, rad - 10, invert=True)
 
 # Initialize Segmenter
 watch.clock()
-segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=magnification, min_area=500)
+segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=magnification, min_area=100, focus_disks=[(f, rad), (f2, rad - 5)])
 print(segmenter.edge_method.mag)
 watch.clock()
 segmenter.make_masks(
-    black_zone_mask=f, 
-    segment_edges=False
+    segment_edges=True
 )
 watch.clock()
+segmenter.lab_equalize()
+watch.clock()
 segmenter.get_all_avg_lab()
+watch.clock()
+segmenter.adjust_layer_labels()
 watch.clock()
 segmenter.label_masks()
 watch.clock()
@@ -81,7 +88,7 @@ if i is not None and i <= segmenter.num_masks:
 print(segmenter.num_masks)
 
 # Show Results
-fig, axs = plt.subplots(1, 4, figsize=(10,10))
+fig, axs = plt.subplots(2, 2, figsize=(10,10))
 
 def format_coord(x, y):
     col = int(x + 0.5) # Round to the nearest integer
@@ -89,43 +96,26 @@ def format_coord(x, y):
     z = segmenter.masks[row, col]
     return f'x={col}, y={row}, mask_num={z}'
 
-axs[0].imshow(g1, cmap='inferno')
-axs[0].axis('off')
-axs[0].format_coord = format_coord
+axs[0,0].imshow(g1, cmap='inferno')
+axs[0,0].axis('off')
+axs[0,0].format_coord = format_coord
 
-axs[1].imshow(result, cmap='inferno')
-axs[1].axis('off')
-axs[1].format_coord = format_coord
+axs[0,1].imshow(result, cmap='inferno')
+axs[0,1].axis('off')
+axs[0,1].format_coord = format_coord
 
 if i is not None and i <= segmenter.num_masks:
     centroid = segmenter.mask_coords(i)
     print(centroid)
-    print(g1.shape)
-    axs[2].scatter(*centroid[::-1])
-axs[2].imshow(segmenter.masks, cmap='inferno')
-axs[2].axis('off')
-axs[2].format_coord = format_coord
+    axs[1,1].scatter(*centroid[::-1])
 
-bg_mask = segmenter.masks == segmenter.bg_mask_id
-bg_indices = np.argwhere(bg_mask)
+axs[1,0].imshow(segmenter.lab[:,:,0], cmap='inferno')
+axs[1,0].axis('off')
+axs[1,0].format_coord = format_coord
 
-points = []
-values = []
-chosen = np.random.choice(len(bg_indices), size=10, replace=False)
-for idx in chosen:
-    x, y = bg_indices[idx]
-    points.append([x, y])
-    values.append(segmenter.lab[x, y, 0])
+axs[1,1].imshow(segmenter.edges, cmap='inferno')
+# axs[1,1].scatter(points[:, 1], points[:, 0])
+axs[1,1].axis('off')
+axs[1,1].format_coord = format_coord
 
-points = np.array(points)
-values = np.array(values)
-
-grid_x, grid_y = np.mgrid[0:segmenter.lab.shape[0]:100j, 0:segmenter.lab.shape[1]:200j]
-l_bg = griddata(points, values, (grid_x, grid_y), method='cubic')
-
-axs[3].imshow(l_bg, cmap='inferno')
-axs[3].axis('off')
-axs[3].format_coord = format_coord
-
-plt.tight_layout()
 plt.show()
