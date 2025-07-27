@@ -25,7 +25,7 @@ colors_by_layer = {
 # image_path = os.listdir("../monolayerGraphene/monolayer_Graphene/")[int(sys.argv[1])]
 
 dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/m_100'
-result_dir = 'C:/Users/admin/Desktop/2d_World/hardware/results/'
+result_dir = 'C:/Users/admin/Desktop/2d_World/hardware/results/m_100'
 files = os.listdir(dir)
 
 monolayer_sizes = np.array([])

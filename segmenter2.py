@@ -201,9 +201,9 @@ class Segmenter():
 
     def process_frame(self, segment_edges=False):
         self.make_masks(segment_edges)
-        self.adjust_layer_labels()
         self.lab_equalize()
         self.get_all_avg_lab()
+        self.adjust_layer_labels()
         self.label_masks()
 
     def prettify(self):
