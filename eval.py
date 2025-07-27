@@ -33,6 +33,11 @@ mono_frame_nums = np.array([])
 bilayer_sizes = np.array([])
 bi_frame_nums = np.array([])
 
+grow = 3
+rad = int(410*grow)
+f1 = focus_disk(np.zeros((2265, 4050)), rad, invert=True)
+f2 = focus_disk(np.zeros((2265, 4050)), rad - 10, invert=True)
+
 for filename in tqdm(files):
     # if 'M100' in filename:
     #     magnification = 100
@@ -59,13 +64,11 @@ for filename in tqdm(files):
     g1 = cv2.imread(f'{dir}/{filename}')
     try:
         g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-        grow = 6
         g1 = cv2.resize(g1, (int(g1.shape[1] * grow), int(g1.shape[0] * grow)))
-        f = focus_disk(g1, int(410 * grow/2), invert=True)
 
         # Initialize Segmenter
-        segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=100, min_area=200)
-        segmenter.process_frame(black_zone_mask=f, segment_edges=False)
+        segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=100, min_area=200, focus_disks=[(f1, rad), (f2, rad-10)])
+        segmenter.process_frame(segment_edges=False)
         result = segmenter.prettify()
         result = (255 * result).astype(np.uint8)
         result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)

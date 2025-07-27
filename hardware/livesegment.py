@@ -6,7 +6,7 @@ sys.path.append('C:/Users/admin/Desktop/2d_World/')
 from segmenter2 import Segmenter
 from material import graphene
 from tqdm import tqdm
-from utils import Stopwatch, focus_disk
+from utils import focus_disk
 import warnings
 
 warnings.simplefilter('ignore', UserWarning)
@@ -39,11 +39,13 @@ def append_to_line(line, arr):
         return arr_str + '\n'
 
 class LiveSegment():
-    def __init__(self, input_dir, result_dir, magnification, min_area=1000):
+    def __init__(self, input_dir, result_dir, magnification, focus_disks, min_area=1000, grow = 3):
         self.input_dir = input_dir
         self.result_dir = result_dir
         self.magnification = magnification 
+        self.focus_disks = focus_disks
         self.min_area = min_area
+        self.grow = grow
         if magnification < 50:
             self.segment_edges = True
         else:
@@ -52,12 +54,10 @@ class LiveSegment():
     def __call__(self, filename):
         g1 = cv2.imread(f'{self.input_dir}/{filename}')
         g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-        grow = 3
-        g1 = cv2.resize(g1, (int(g1.shape[1]*grow), int(g1.shape[0]*grow)))
-        f = focus_disk(g1, int(410*grow), invert=True)
+        g1 = cv2.resize(g1, (int(g1.shape[1]*self.grow), int(g1.shape[0]*self.grow)))
 
-        segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=self.magnification, min_area=self.min_area)
-        segmenter.process_frame(black_zone_mask=f, segment_edges=self.segment_edges)
+        segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=self.magnification, min_area=self.min_area, focus_disks=self.focus_disks)
+        segmenter.process_frame(segment_edges=self.segment_edges)
         result = segmenter.prettify()
         result = (255 * result).astype(np.uint8)
         result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)

@@ -3,6 +3,8 @@ from watchdog.events import FileSystemEventHandler
 from livesegment import LiveSegment
 import time
 import os
+from utils import focus_disk
+import numpy as np
 
 class NewFileHandler(FileSystemEventHandler):
     def _placeholder(fname):
@@ -22,16 +24,20 @@ if __name__ == "__main__":
     import sys 
 
     mag = int(sys.argv[1])
+    grow = 3
+    rad = int(410*grow)
+    f1 = focus_disk(np.zeros((2265, 4050)), rad, invert=True)
+    f2 = focus_disk(np.zeros((2265, 4050)), rad - 10, invert=True)
     if mag == 10:
         photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir'
         result_dir = 'C:/Users/admin/Desktop/2d_World/hardware/results'
         event_handler = NewFileHandler()
-        event_handler.set_run_method(LiveSegment(photo_dir, result_dir, 10))
+        event_handler.set_run_method(LiveSegment(photo_dir, result_dir, 10, focus_disks=[(f1, rad), (f2, rad-10)]))
     elif mag == 100:
         photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/m_100'
         result_dir = 'C:/Users/admin/Desktop/2d_World/hardware/results/m_100'
         event_handler = NewFileHandler()
-        event_handler.set_run_method(LiveSegment(photo_dir, result_dir, 100))
+        event_handler.set_run_method(LiveSegment(photo_dir, result_dir, 100, focus_disks=[(f1, rad), (f2, rad-10)]))
     else:
         raise ValueError('Invalid Magnification Given.')
 
