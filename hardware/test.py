@@ -12,7 +12,7 @@ import subprocess
 import time
 import os
 from PIL import Image
-import pyautogui as pag
+# import pyautogui as pag
 
 # turret = Turret('COM8')
 # print(turret.rotate_to_position(int(sys.argv[1])))
@@ -44,22 +44,25 @@ import pyautogui as pag
 # x_motor.setup_velocity(max_velocity=20_000, acceleration=518_630)
 # print(x_motor.get_velocity_parameters())
 
-# test_stage = Stage('', '', magnification=20, test_mode=True)
-# test_stage.set_chip_dims(7,7)
-# test_stage.set_direction(180)
-# z_plane = [-3000, -3800, -1200]
-# coords = test_stage.get_snake(z_plane)
-# coords = np.stack(coords, axis=0)
+test_stage = Stage('', '', magnification=10, test_mode=True)
+test_stage.set_chip_dims(1.7,0.86)
+test_stage.set_direction(180)
+z_plane = [-3000, -3800, -1200]
+coords = test_stage.get_snake(z_plane)
+coords = np.stack(coords, axis=0)
 
-# fig = plt.figure()
+fig = plt.figure()
 # ax = fig.add_subplot(111, projection='3d')
-# print(len(coords[:,0]))
-# # ax.plot(coords[:,0], coords[:,1], coords[:,2], '-b')
+ax = fig.add_subplot()
+print(len(coords[:,0]))
+# ax.plot(coords[:,0], coords[:,1], coords[:,2], '-b')
+ax.plot(-coords[:,0], coords[:,1], '-bo')
 # x, y, z = zip(*[(1, 1, 1000), (2, 2, 3000)])
 # ax.plot(x, y, z, '-b')
 # ax.scatter(coords[0,0], coords[0,1], coords[0,2], color='green', s=60, label='Start')
+# ax.scatter(coords[0,0], coords[0,1], color='green', s=60, label='Start')
 # ax.legend()
-# plt.show()
+plt.show()
     
 
 # ps_test = PhotoShoot(photo_dir='photo_dir')
@@ -106,9 +109,9 @@ import pyautogui as pag
 # pag.leftClick(1794, 230)
 # pag.leftClick(1794, 230)
 
-while True:
-    print(pag.displayMousePosition())
-    time.sleep(0.05)
+# while True:
+#     print(pag.displayMousePosition())
+#     time.sleep(0.05)
 
 # for i in range(10):
 #     print(i)

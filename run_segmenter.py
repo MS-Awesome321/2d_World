@@ -7,7 +7,7 @@ from segmenter2 import Segmenter
 from material import graphene
 import warnings
 from utils import Stopwatch, focus_disk
-
+from scipy.ndimage import gaussian_filter
 
 watch = Stopwatch()
 
@@ -29,22 +29,36 @@ filename = sys.argv[1]
 
 if 'M100' in filename or 'm100' in filename:
     magnification = 100
+    rad = 360
+    segment_edges = False
 elif 'M50' in filename:
     magnification = 50
+    segment_edges = False
 elif 'M20' in filename:
     magnification = 20
+    segment_edges = True
 elif 'M10' in filename:
     magnification = 10
+    segment_edges = True
 elif 'M5' in filename:
     magnification = 5
+    segment_edges = True
 else:
     magnification = 10
+    segment_edges = True
+    rad = 260
+
+def blur(img, sigma):
+    r = gaussian_filter(img[:,:,0], sigma)
+    g = gaussian_filter(img[:,:,1], sigma)
+    b = gaussian_filter(img[:,:,2], sigma)
+    return np.stack([r, g, b], axis=-1)
 
 g1 = cv2.imread(f'/Users/mayanksengupta/Desktop/2d_World/hardware/photo_dir/{filename}')
 g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-grow = 4
+grow = 2
 g1 = cv2.resize(g1, (int(g1.shape[1]*grow), int(g1.shape[0]*grow)))
-rad = 260
+g1 = blur(g1, 2)
 rad *= grow
 rad = int(rad)
 f = focus_disk(g1, rad, invert=True)
@@ -52,21 +66,21 @@ f2 = focus_disk(g1, rad - 10, invert=True)
 
 # Initialize Segmenter
 watch.clock()
-segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=magnification, min_area=100, focus_disks=[(f, rad), (f2, rad - 5)])
+segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=magnification, min_area=50, focus_disks=[(f, rad), (f2, rad - 5)])
 print(segmenter.edge_method.mag)
-watch.clock()
+# watch.clock()
 segmenter.make_masks(
-    segment_edges=True
+    segment_edges=segment_edges
 )
-watch.clock()
+# watch.clock()
 segmenter.lab_equalize()
-watch.clock()
+# watch.clock()
 segmenter.get_all_avg_lab()
-watch.clock()
+# watch.clock()
 segmenter.adjust_layer_labels()
-watch.clock()
+# watch.clock()
 segmenter.label_masks()
-watch.clock()
+# watch.clock()
 result = segmenter.prettify()
 watch.clock()
 

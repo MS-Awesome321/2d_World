@@ -5,6 +5,7 @@ from segmenter2 import Segmenter
 from material import graphene
 from tqdm import tqdm
 from utils import Stopwatch, focus_disk
+from scipy.ndimage import gaussian_filter
 import warnings
 
 warnings.simplefilter('ignore', UserWarning)
@@ -24,8 +25,8 @@ colors_by_layer = {
 
 # image_path = os.listdir("../monolayerGraphene/monolayer_Graphene/")[int(sys.argv[1])]
 
-dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/m_100'
-result_dir = 'C:/Users/admin/Desktop/2d_World/hardware/results/m_100'
+dir = '/Users/mayanksengupta/Downloads/m_100_2/m_100'
+result_dir = '/Users/mayanksengupta/Downloads/m_100_2/m_100_results2'
 files = os.listdir(dir)
 
 monolayer_sizes = np.array([])
@@ -33,10 +34,16 @@ mono_frame_nums = np.array([])
 bilayer_sizes = np.array([])
 bi_frame_nums = np.array([])
 
-grow = 3
+grow = 2
 rad = int(410*grow)
-f1 = focus_disk(np.zeros((2265, 4050)), rad, invert=True)
-f2 = focus_disk(np.zeros((2265, 4050)), rad - 10, invert=True)
+f1 = focus_disk(np.zeros((755 * grow, 1350 * grow)), rad, invert=True)
+f2 = focus_disk(np.zeros((755 * grow, 1350 * grow)), rad - 10, invert=True)
+
+def blur(img, sigma):
+    r = gaussian_filter(img[:,:,0], sigma)
+    g = gaussian_filter(img[:,:,1], sigma)
+    b = gaussian_filter(img[:,:,2], sigma)
+    return np.stack([r, g, b], axis=-1)
 
 for filename in tqdm(files):
     # if 'M100' in filename:
@@ -65,6 +72,7 @@ for filename in tqdm(files):
     try:
         g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
         g1 = cv2.resize(g1, (int(g1.shape[1] * grow), int(g1.shape[0] * grow)))
+        g1 = blur(g1, 2)
 
         # Initialize Segmenter
         segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=100, min_area=200, focus_disks=[(f1, rad), (f2, rad-10)])
