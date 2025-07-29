@@ -159,7 +159,7 @@ class EntropyEdgeMethod(EdgeMethod):
     input = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     sections = subdivide(input, self.k)
     if self.mag <= 20:
-       disk_radius = 2
+       disk_radius = 1
        percentile_threshold = 80
     else:
       disk_radius = 4
@@ -220,20 +220,21 @@ wte2 = Material('WTe2', [58.50683594, 28.57762527, -2.79295444], layer_labels=wt
 
 graphene_labels = { # cielab colorspace
                   # (51, 14, 1): 'monolayer',
-                  (47, 12, 1): 'monolayer',
-                  (46, 19, 1): 'monolayer',
-                  (44, 21, 0): 'bilayer',
+                  (47, 12, 3): 'monolayer',
+                  (46, 19, 3): 'monolayer',
+                  (44, 16, -4): 'bilayer',
                   (38, 21, -2): 'trilayer',
                   (30, 10, -20): 'fewlayer',
                   (50, 0, -8): 'manylayer',
                   (53, 0, 0): 'manylayer',
-                  (66, -7, 11): 'manylayer',
+                #   (66, -7, 11): 'manylayer',
                   # (43.5, 8, 1): 'manylayer',
                   (75, 0, 35): 'bulk',
                   (80, 5, 10): 'bulk',
                   (35, 1, 36): 'bulk',
-                  (48.1, 4.7, 10.4): 'dirt',
-                  (56, 0, 0): 'dirt',
+                  (48.1, 6.7, -1.4): 'dirt',
+                  (53, 0, 8.5): 'dirt',
+                  (39, 8, 8): 'dirt',
                 #   (30, 20, -10): 'dirt',
                   (0,0,0): 'bg'
               }

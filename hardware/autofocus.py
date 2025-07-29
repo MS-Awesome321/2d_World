@@ -37,6 +37,7 @@ def incremental_check(focus_motor, start, step, max, window_size=5, shrink=2, bb
 
     max_score = score
     max_frame = None
+    max_pos = None
     min_slope = 0
     i = start
     flipped = False
@@ -59,6 +60,7 @@ def incremental_check(focus_motor, start, step, max, window_size=5, shrink=2, bb
         if score > max_score:
             max_score = score
             max_frame = og_frame
+            max_pos = focus_motor.get_position()
 
         score_window.append(score)
 
@@ -104,7 +106,7 @@ def incremental_check(focus_motor, start, step, max, window_size=5, shrink=2, bb
             focus_motor.rotate_relative(s)
             time.sleep(0.006 * abs(step)) # slowed because of how much slip this motor has
 
-    return max_frame
+    return max_frame, max_pos
 
 def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2, direction = 1, change_factor = 1, shrink=2, bbox=(432,137,1782,892)):
     focus_speed = 5

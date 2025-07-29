@@ -7,6 +7,7 @@ from segmenter2 import Segmenter
 from material import graphene
 from tqdm import tqdm
 from utils import focus_disk
+from scipy.ndimage import gaussian_filter
 import warnings
 
 warnings.simplefilter('ignore', UserWarning)
@@ -37,6 +38,12 @@ def append_to_line(line, arr):
         return line + ' ' + arr_str + '\n'
     else:
         return arr_str + '\n'
+    
+def blur(img, sigma):
+    r = gaussian_filter(img[:,:,0], sigma)
+    g = gaussian_filter(img[:,:,1], sigma)
+    b = gaussian_filter(img[:,:,2], sigma)
+    return np.stack([r, g, b], axis=-1)
 
 class LiveSegment():
     def __init__(self, input_dir, result_dir, magnification, focus_disks, min_area=1000, grow = 3):
@@ -55,6 +62,11 @@ class LiveSegment():
         g1 = cv2.imread(f'{self.input_dir}/{filename}')
         g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
         g1 = cv2.resize(g1, (int(g1.shape[1]*self.grow), int(g1.shape[0]*self.grow)))
+
+        if self.magnification < 50:
+            g1 = blur(g1, 0.25)
+        else:
+            g1 = blur(g1, 2)
 
         segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=self.magnification, min_area=self.min_area, focus_disks=self.focus_disks)
         segmenter.process_frame(segment_edges=self.segment_edges)

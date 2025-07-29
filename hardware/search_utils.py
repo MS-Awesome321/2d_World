@@ -54,7 +54,7 @@ class WF():
 
         temp = focus_motor.get_pos()
         d = 1 if self.counter//n_cols % 2 == 0 else -1
-        final_score = autofocus(auto_stop=True, q_stop=True, focus=focus_motor, timeup=5, direction=d, change_factor=0.25)
+        final_score = autofocus(auto_stop=True, q_stop=True, focus=focus_motor, timeup=2, direction=d, change_factor=0.25)
         focus_motor.position = temp
 
         if self.take_pic:

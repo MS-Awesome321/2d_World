@@ -1,5 +1,6 @@
 import keyboard
 from stage import Stage
+import sys
 
 x = '27503936'
 y = '27503951'
@@ -7,6 +8,13 @@ y = '27503951'
 test_stage = Stage(x, y, magnification=50)
 test_stage.x_motor.setup_velocity(max_velocity=100_000, acceleration=700_000)
 test_stage.y_motor.setup_velocity(max_velocity=100_000, acceleration=700_000)
+
+try:
+    x = float(sys.argv[1])
+    y = float(sys.argv[2])
+    test_stage.move_to([x, y])
+except:
+    pass
 
 try:
     print('Starting Manual Motor Control')
