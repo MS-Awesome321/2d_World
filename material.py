@@ -221,8 +221,8 @@ wte2 = Material('WTe2', [58.50683594, 28.57762527, -2.79295444], layer_labels=wt
 graphene_labels = { # cielab colorspace
                   # (51, 14, 1): 'monolayer',
                   (47, 12, 3): 'monolayer',
-                  (46, 19, 3): 'monolayer',
-                  (44, 16, -4): 'bilayer',
+                  (46, 17, 3): 'monolayer',
+                  (44, 17, 0): 'bilayer',
                   (38, 21, -2): 'trilayer',
                   (30, 10, -20): 'fewlayer',
                   (50, 0, -8): 'manylayer',

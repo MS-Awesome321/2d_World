@@ -58,7 +58,7 @@ g1 = cv2.imread(f'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/{filename}'
 g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
 grow = 2
 g1 = cv2.resize(g1, (int(g1.shape[1]*grow), int(g1.shape[0]*grow)))
-g1 = blur(g1, 0.25)
+g1 = blur(g1, 3)
 rad *= grow
 rad = int(rad)
 f = focus_disk(g1, rad, invert=True)

@@ -55,6 +55,9 @@ x_s, y_s = np.array([float(e) for e in m_x + b_x]), np.array([float(e) for e in 
 areas = np.array([int(e) for e in m_areas + b_areas])
 
 idxs = np.argsort(areas)[::-1]
+max_area = 5000
+idxs = idxs[areas[idxs] < max_area]
+
 num_top_matches = int(sys.argv[1])
 f_nums = f_nums[idxs][:num_top_matches]
 x_s, y_s = x_s[idxs][:num_top_matches], y_s[idxs][:num_top_matches]
@@ -87,10 +90,10 @@ try:
         coord = [int(e) for e in coord.tolist()]
 
         if prev_frame is not None and prev_frame == f_num:
-            coord[2] = prev_pos + 200
+            coord[2] = prev_pos + 250
             test_stage.move_to(coord)
         else:
-            coord[2] -= 150
+            coord[2] -= 100
             test_stage.move_to(coord)
         prev_frame = f_num
 
