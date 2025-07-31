@@ -156,7 +156,10 @@ class EntropyEdgeMethod(EdgeMethod):
     Input 2K or 4K resolution images for best results.
     '''
 
-    input = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    if len(img.shape) == 3:
+      input = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    else :
+       input = img
     sections = subdivide(input, self.k)
     if self.mag <= 20:
        disk_radius = 1
