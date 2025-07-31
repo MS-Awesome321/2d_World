@@ -160,6 +160,7 @@ class Stage:
                 row = row[::-1]
             coords.extend(row)
 
+        self.coords = coords
         return coords
 
     # ------------------------------------------------------------------ #
@@ -173,10 +174,10 @@ class Stage:
         Perform the raster scan.
         """
         
-        coords = self.get_snake(z_corners)
+        self.get_snake(z_corners)
 
         # execute the moves
-        for x, y, z in tqdm(coords):
+        for x, y, z in tqdm(self.coords):
             self.x_motor.move_to(x)
             self.y_motor.move_to(y)
             if self.focus_motor is not None:

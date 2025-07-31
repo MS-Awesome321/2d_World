@@ -25,12 +25,6 @@ colors_by_layer = {
     'bg': np.array([0, 0, 0])/255.0, # Uncolored
 }
 
-
-
-dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir'
-result_dir = 'C:/Users/admin/Desktop/2d_World/hardware/results'
-result_txt = 'C:/Users/admin/Desktop/2d_World/hardware/results.txt'
-
 def append_to_line(line, arr):
     arr_str = ' '.join(str(x) for x in arr)
     line = line.strip()
@@ -46,13 +40,14 @@ def blur(img, sigma):
     return np.stack([r, g, b], axis=-1)
 
 class LiveSegment():
-    def __init__(self, input_dir, result_dir, magnification, focus_disks, min_area=1000, grow = 3):
+    def __init__(self, input_dir, result_dir, result_txt, magnification, focus_disks, min_area=1000, grow = 3):
         self.input_dir = input_dir
         self.result_dir = result_dir
         self.magnification = magnification 
         self.focus_disks = focus_disks
         self.min_area = min_area
         self.grow = grow
+        self.result_txt = result_txt
         if magnification < 50:
             self.segment_edges = True
         else:
@@ -79,31 +74,31 @@ class LiveSegment():
         mono_size, mono_locations = segmenter.largest_flakes('monolayer')
         bi_size, bi_locations = segmenter.largest_flakes('bilayer')
 
-        if 'test_' in filename:
-            i = int(filename[filename.index('_') + 1:filename.index('.')])
-            mono_frame_nums = i*np.ones_like(mono_size)
-            bi_frame_nums = i*np.ones_like(bi_size)
 
-            if os.path.exists(result_txt):
-                with open(result_txt, 'r') as f:
-                    lines = f.readlines()
+        i = int(filename[filename.index('_') + 1:filename.index('.')])
+        mono_frame_nums = i*np.ones_like(mono_size)
+        bi_frame_nums = i*np.ones_like(bi_size)
 
-            if mono_locations is not None:
-                mono_locations = np.round(mono_locations, 2)
-                lines[0] = append_to_line(lines[0], mono_size)
-                lines[2] = append_to_line(lines[2], mono_frame_nums)
-                lines[4] = append_to_line(lines[4], mono_locations[:, 0])
-                lines[5] = append_to_line(lines[5], mono_locations[:, 1])
+        if os.path.exists(self.result_txt):
+            with open(self.result_txt, 'r') as f:
+                lines = f.readlines()
 
-            if bi_locations is not None:
-                bi_locations = np.round(bi_locations, 2)
-                lines[1] = append_to_line(lines[1], bi_size)
-                lines[3] = append_to_line(lines[3], bi_frame_nums)
-                lines[6] = append_to_line(lines[6], bi_locations[:, 0])
-                lines[7] = append_to_line(lines[7], bi_locations[:, 1])
+        if mono_locations is not None:
+            mono_locations = np.round(mono_locations, 2)
+            lines[0] = append_to_line(lines[0], mono_size)
+            lines[2] = append_to_line(lines[2], mono_frame_nums)
+            lines[4] = append_to_line(lines[4], mono_locations[:, 0])
+            lines[5] = append_to_line(lines[5], mono_locations[:, 1])
 
-            # Write back to results.txt
-            with open(result_txt, 'w') as f:
-                f.writelines(lines)
+        if bi_locations is not None:
+            bi_locations = np.round(bi_locations, 2)
+            lines[1] = append_to_line(lines[1], bi_size)
+            lines[3] = append_to_line(lines[3], bi_frame_nums)
+            lines[6] = append_to_line(lines[6], bi_locations[:, 0])
+            lines[7] = append_to_line(lines[7], bi_locations[:, 1])
+
+        # Write back to results.txt
+        with open(self.result_txt, 'w') as f:
+            f.writelines(lines)
 
         return segmenter
