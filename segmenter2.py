@@ -82,7 +82,7 @@ class Segmenter():
         # self.var_labs = np.linalg.norm(var_labs, axis=1)
         return avg_labs, var_labs
     
-    def lab_equalize(self, num_points = 500):
+    def lab_equalize(self, num_points = 1000):
         points = []
         values = []
 
@@ -92,7 +92,7 @@ class Segmenter():
             y = np.random.randint(low=0, high=self.lab.shape[0])
             if self.bg_mask[y,x] != 0:
                 points.append(np.array([y, x]))
-                values.append(self.lab[y, x, 0])
+                values.append(self.lab[y, x, :])
 
         # Outer Circle Points
         i = 0
@@ -106,7 +106,7 @@ class Segmenter():
             if not((x < 0 or x >= self.lab.shape[1]) or (y < 0 or y >= self.lab.shape[0])):
                 if self.bg_mask[y,x] != 0:
                     points.append(np.array([y, x]))
-                    values.append(self.lab[y, x, 0])
+                    values.append(self.lab[y, x, :])
                 else:
                     i -= 0.5
 
@@ -122,23 +122,29 @@ class Segmenter():
         points.append(np.array([y1, x0]))
         points.append(np.array([y1, x1]))
 
-        values.append(self.lab[y0, x0, 0])
-        values.append(self.lab[y0, x1, 0])
-        values.append(self.lab[y1, x0, 0])
-        values.append(self.lab[y1, x1, 0])
+        values.append(self.lab[y0, x0, :])
+        values.append(self.lab[y0, x1, :])
+        values.append(self.lab[y1, x0, :])
+        values.append(self.lab[y1, x1, :])
 
         # Interpolation
         points = np.stack(points, axis=0)
         values = np.stack(values, axis=0)
         grid_x, grid_y = np.mgrid[0:self.lab.shape[0]:self.lab.shape[0] * 1j, 0:self.lab.shape[1]:self.lab.shape[1] * 1j]
-        l_bg = griddata(points, values, (grid_x, grid_y), method='linear', fill_value=0)
+        l_bg = griddata(points, values[:,0], (grid_x, grid_y), method='linear', fill_value=0)
+        a_bg = griddata(points, values[:,1], (grid_x, grid_y), method='linear', fill_value=0)
+        b_bg = griddata(points, values[:,2], (grid_x, grid_y), method='linear', fill_value=0)
 
         # Return Result
         l_bg[l_bg < 0] = 0
         l_bg = l_bg.astype('int16')
+        a_bg = a_bg.astype('int16')
+        b_bg = b_bg.astype('int16')
         self.lab[:,:,0] -= l_bg - int(self.target_bg_lab[0])
+        self.lab[:,:,1] -= a_bg - int(self.target_bg_lab[1])
+        self.lab[:,:,2] -= b_bg - int(self.target_bg_lab[2])
         f2 = self.focus_disks[-1][0]
-        self.lab[:,:,0][f2] = 0
+        self.lab[f2] = 0
         self.l_bg = l_bg
         return l_bg
 
@@ -287,3 +293,40 @@ class Segmenter():
             return None  # Mask id not found
         centroid = coords.mean(axis=0)
         return np.array(centroid)
+    
+    def direct_lab_label(self, window_size=(2,2)):
+        """
+        Labels each pixel in self.lab by layer type, according to self.layer_labels,
+        and returns a prettified RGB image using self.colors.
+        """
+        m, n = window_size
+        # Pad lab image for sliding window
+        pad_h = m // 2
+        pad_w = n // 2
+        lab_padded = np.pad(self.lab, ((pad_h, pad_h), (pad_w, pad_w), (0, 0)), mode='reflect')
+
+        # Efficient sliding window mean using convolution
+        kernel = np.ones((m, n), dtype=np.float32) / (m * n)
+        avg_l = cv2.filter2D(lab_padded[:,:,0], -1, kernel)[pad_h:-pad_h, pad_w:-pad_w]
+        avg_a = cv2.filter2D(lab_padded[:,:,1], -1, kernel)[pad_h:-pad_h, pad_w:-pad_w]
+        avg_b = cv2.filter2D(lab_padded[:,:,2], -1, kernel)[pad_h:-pad_h, pad_w:-pad_w]
+        avg_lab = np.stack([avg_l, avg_a, avg_b], axis=-1)
+
+        # Prepare LAB keys and corresponding layer types
+        lab_keys = np.array(list(self.layer_labels.keys()))
+        layer_types = np.array(list(self.layer_labels.values()))
+
+        # Compute distances and assign labels in a vectorized way
+        avg_lab_flat = avg_lab.reshape(-1, 3)
+        dists = np.linalg.norm(avg_lab_flat[:, None, :] - lab_keys[None, :, :], axis=2)
+        label_indices = np.argmin(dists, axis=1)
+        labels_flat = np.array(layer_types)[label_indices]
+
+        # Map layer types to colors
+        color_table = np.zeros((labels_flat.size, 3))
+        for idx, label in enumerate(labels_flat):
+            color_table[idx] = self.colors[label]
+        prettified_img = color_table.reshape(self.lab.shape[0], self.lab.shape[1], 3)
+
+        self.direct_lab_pretty = prettified_img
+        return prettified_img

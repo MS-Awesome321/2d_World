@@ -8,6 +8,7 @@ from material import graphene
 import warnings
 from utils import Stopwatch, focus_disk
 from scipy.ndimage import gaussian_filter
+from skimage.filters.edges import sobel
 
 watch = Stopwatch()
 
@@ -31,6 +32,7 @@ if 'M100' in filename or 'm100' in filename:
     magnification = 100
     rad = 420
     segment_edges = False
+    blur_factor = 3
 elif 'M50' in filename:
     magnification = 50
     segment_edges = False
@@ -45,8 +47,9 @@ elif 'M5' in filename:
     segment_edges = True
 else:
     magnification = 10
-    segment_edges = True
-    rad = 420
+    segment_edges = False
+    rad = 425
+    blur_factor = 1
 
 def blur(img, sigma):
     r = gaussian_filter(img[:,:,0], sigma)
@@ -54,11 +57,11 @@ def blur(img, sigma):
     b = gaussian_filter(img[:,:,2], sigma)
     return np.stack([r, g, b], axis=-1)
 
-g1 = cv2.imread(f'/Users/mayanksengupta/Downloads/m_100/m_100/{filename}')
+g1 = cv2.imread(f'/Users/mayanksengupta/Desktop/2d_World/hardware/photo_dir/{filename}')
 g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-grow = 2
+grow = 0.8
 g1 = cv2.resize(g1, (int(g1.shape[1]*grow), int(g1.shape[0]*grow)))
-g1 = blur(g1, 3)
+g1 = blur(g1, blur_factor)
 rad *= grow
 rad = int(rad)
 f = focus_disk(g1, rad, invert=True)
@@ -66,7 +69,7 @@ f2 = focus_disk(g1, rad - 10, invert=True)
 
 # Initialize Segmenter
 watch.clock()
-segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=magnification, min_area=50, focus_disks=[(f, rad), (f2, rad - 5)])
+segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=magnification, min_area=50, focus_disks=[(f, rad), (f2, rad - 10)])
 print(segmenter.edge_method.mag)
 # watch.clock()
 segmenter.make_masks(
@@ -123,11 +126,15 @@ if i is not None and i <= segmenter.num_masks:
     print(centroid)
     axs[1,1].scatter(*centroid[::-1])
 
-axs[1,0].imshow(segmenter.lab[:,:,0], cmap='inferno')
+axs[1,0].imshow(segmenter.lab[:,:,1], cmap='inferno')
 axs[1,0].axis('off')
 axs[1,0].format_coord = format_coord
 
-axs[1,1].imshow(segmenter.edges, cmap='inferno')
+watch.clock()
+r = segmenter.direct_lab_label()
+watch.clock()
+# r = sobel(np.pow(segmenter.lab[:,:,0], 0.5))
+axs[1,1].imshow(r, cmap='inferno')
 # axs[1,1].scatter(points[:, 1], points[:, 0])
 axs[1,1].axis('off')
 axs[1,1].format_coord = format_coord
