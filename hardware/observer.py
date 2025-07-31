@@ -31,13 +31,15 @@ if __name__ == "__main__":
     if mag == 10:
         photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir'
         result_dir = 'C:/Users/admin/Desktop/2d_World/hardware/results'
+        result_txt = 'C:/Users/admin/Desktop/2d_World/hardware/results.txt'
         event_handler = NewFileHandler()
-        event_handler.set_run_method(LiveSegment(photo_dir, result_dir, 10, focus_disks=[(f1, rad), (f2, rad-10)], grow=grow))
+        event_handler.set_run_method(LiveSegment(photo_dir, result_dir, result_txt, 10, focus_disks=[(f1, rad), (f2, rad-10)], grow=grow))
     elif mag == 100:
         photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/m_100'
         result_dir = 'C:/Users/admin/Desktop/2d_World/hardware/results/m_100'
+        result_txt = 'C:/Users/admin/Desktop/2d_World/hardware/results100.txt'
         event_handler = NewFileHandler()
-        event_handler.set_run_method(LiveSegment(photo_dir, result_dir, 100, focus_disks=[(f1, rad), (f2, rad-10)], grow=grow))
+        event_handler.set_run_method(LiveSegment(photo_dir, result_dir, result_txt, 100, focus_disks=[(f1, rad), (f2, rad-10)], grow=grow))
     else:
         raise ValueError('Invalid Magnification Given.')
 
