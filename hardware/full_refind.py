@@ -30,7 +30,7 @@ test_stage = Stage(x, y, focus_comport='COM5', magnification=10)
 test_stage.set_direction(180)
 test_stage.set_home()
 test_stage.set_chip_dims(1.7, 0.86)
-z_plane = [-4350, -5050, -620]
+z_plane = [-3600, -1240, 2170]
 test_stage.x_motor.setup_velocity(max_velocity=4_000_000, acceleration=8_000_000)
 test_stage.y_motor.setup_velocity(max_velocity=4_000_000, acceleration=8_000_000)
 
@@ -93,17 +93,18 @@ try:
             coord[2] = prev_pos + 250
             test_stage.move_to(coord)
         else:
-            coord[2] -= 100
+            coord[2] -= 350
             test_stage.move_to(coord)
         prev_frame = f_num
 
         time.sleep(0.5)
-        final_frame, prev_pos = incremental_check(test_stage.focus_motor, 0, 15, 550, slope_threshold=-0.025)
+        final_frame, prev_pos = incremental_check(test_stage.focus_motor, 0, 15, 750, slope_threshold=-0.025)
 
         if final_frame is not None:
             cv2.imwrite(f'{photo_dir}/m_100/m100_{f_num}_{i}.jpg', final_frame)
         else:
             print(f'{f_num} {i} is None')
+            prev_pos = coord[2]
 
 except Exception as e:
     print(e)

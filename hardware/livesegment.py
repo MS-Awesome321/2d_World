@@ -74,8 +74,13 @@ class LiveSegment():
         mono_size, mono_locations = segmenter.largest_flakes('monolayer')
         bi_size, bi_locations = segmenter.largest_flakes('bilayer')
 
-
-        i = int(filename[filename.index('_') + 1:filename.index('.')])
+        if 'test_' in filename:
+            i = int(filename[filename.index('_') + 1:filename.index('.')])
+        elif 'm100' in filename:
+            start = filename.index('_') + 1
+            start = filename.index('_', start)
+            end = filename.index('.')
+            i = int(filename[start:filename.index('.') : end])
         mono_frame_nums = i*np.ones_like(mono_size)
         bi_frame_nums = i*np.ones_like(bi_size)
 

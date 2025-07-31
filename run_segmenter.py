@@ -30,6 +30,7 @@ filename = sys.argv[1]
 if 'M100' in filename or 'm100' in filename:
     magnification = 100
     rad = 420
+    blur_factor = 3
     segment_edges = False
 elif 'M50' in filename:
     magnification = 50
@@ -45,8 +46,9 @@ elif 'M5' in filename:
     segment_edges = True
 else:
     magnification = 10
-    segment_edges = True
+    segment_edges = False
     rad = 420
+    blur_factor = 0.25
 
 def blur(img, sigma):
     r = gaussian_filter(img[:,:,0], sigma)
@@ -54,11 +56,11 @@ def blur(img, sigma):
     b = gaussian_filter(img[:,:,2], sigma)
     return np.stack([r, g, b], axis=-1)
 
-g1 = cv2.imread(f'/Users/mayanksengupta/Downloads/m_100/m_100/{filename}')
+g1 = cv2.imread(f'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/{filename}')
 g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
 grow = 2
 g1 = cv2.resize(g1, (int(g1.shape[1]*grow), int(g1.shape[0]*grow)))
-g1 = blur(g1, 3)
+g1 = blur(g1, blur_factor)
 rad *= grow
 rad = int(rad)
 f = focus_disk(g1, rad, invert=True)

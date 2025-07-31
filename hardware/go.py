@@ -14,13 +14,14 @@ import os
 x = '27503936'
 y = '27503951'
 grow = 2
-z_corners = [-4350, -5050, -620]
+max_area = 5000
+z_corners = [-3600, -1240, 2170]
 result_txt = 'results.txt'
 photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir'
+num_top_matches = int(sys.argv[1])
 
 test_stage = Stage(x, y, focus_comport='COM5', magnification=10)
 lens = Turret('COM7')
-
 
 # AUTOSEARCH
 try:
@@ -84,7 +85,7 @@ x_s, y_s = np.array([float(e) for e in m_x + b_x]), np.array([float(e) for e in 
 areas = np.array([int(e) for e in m_areas + b_areas])
 
 idxs = np.argsort(areas)[::-1]
-num_top_matches = int(sys.argv[1])
+idxs = idxs[areas[idxs] < max_area]
 f_nums = f_nums[idxs][:num_top_matches]
 x_s, y_s = x_s[idxs][:num_top_matches], y_s[idxs][:num_top_matches]
 
@@ -116,22 +117,22 @@ try:
         coord = get_exact_location(poi[i], (x, y), (755 * grow, 1350 * grow))
         coord = [int(e) for e in coord.tolist()]
 
-        # Minimize focus movement for nearby flakes
         if prev_frame is not None and prev_frame == f_num:
-            coord[2] = prev_pos + 200
+            coord[2] = prev_pos + 250
             test_stage.move_to(coord)
         else:
-            coord[2] -= 150
+            coord[2] -= 350
             test_stage.move_to(coord)
         prev_frame = f_num
 
         time.sleep(0.5)
-        final_frame, prev_pos = incremental_check(test_stage.focus_motor, 0, 15, 550, slope_threshold=-0.025)
+        final_frame, prev_pos = incremental_check(test_stage.focus_motor, 0, 15, 750, slope_threshold=-0.025)
 
         if final_frame is not None:
             cv2.imwrite(f'{photo_dir}/m_100/m100_{f_num}_{i}.jpg', final_frame)
         else:
             print(f'{f_num} {i} is None')
+            prev_pos = coord[2]
 
 except Exception as e:
     print(e)
