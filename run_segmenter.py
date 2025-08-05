@@ -60,7 +60,7 @@ def blur(img, sigma):
 
 g1 = cv2.imread(f'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/{filename}')
 g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-grow = 0.8
+grow = 2
 g1 = cv2.resize(g1, (int(g1.shape[1]*grow), int(g1.shape[0]*grow)))
 g1 = blur(g1, blur_factor)
 rad *= grow
@@ -70,7 +70,7 @@ f2 = focus_disk(g1, rad - 10, invert=True)
 
 # Initialize Segmenter
 watch.clock()
-segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=magnification, min_area=50, focus_disks=[(f, rad), (f2, rad - 10)])
+segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=magnification, min_area=50, focus_disks=[(f, rad), (f2, rad - 10)], k=3)
 print(segmenter.edge_method.mag)
 # watch.clock()
 segmenter.make_masks(
@@ -127,15 +127,15 @@ if i is not None and i <= segmenter.num_masks:
     print(centroid)
     axs[1,1].scatter(*centroid[::-1])
 
-axs[1,0].imshow(segmenter.lab[:,:,1], cmap='inferno')
+axs[1,0].imshow(segmenter.lab[:,:,0], cmap='inferno')
 axs[1,0].axis('off')
 axs[1,0].format_coord = format_coord
 
-watch.clock()
-r = segmenter.direct_lab_label()
-watch.clock()
+# watch.clock()
+# r = segmenter.direct_lab_label()
+# watch.clock()
 # r = sobel(np.pow(segmenter.lab[:,:,0], 0.5))
-axs[1,1].imshow(r, cmap='inferno')
+axs[1,1].imshow(segmenter.edges, cmap='inferno')
 # axs[1,1].scatter(points[:, 1], points[:, 0])
 axs[1,1].axis('off')
 axs[1,1].format_coord = format_coord
