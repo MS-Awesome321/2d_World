@@ -122,4 +122,6 @@ x = '27503936'
 y = '27503951'
 
 stage = Stage(x, y, focus_comport='COM5', magnification=10)
-stage.jog_in_direction(30)
+stage.x_motor.setup_jog(max_velocity=100_000, acceleration=1_000_000)
+stage.y_motor.setup_jog(max_velocity=100_000, acceleration=1_000_000)
+stage.jog_in_direction(int(sys.argv[1]))

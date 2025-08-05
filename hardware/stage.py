@@ -222,36 +222,50 @@ class Stage:
 
     def jog_in_direction(self, bearing, quick_stop=True):
         '''
-        Jogs stage in direction of bearing (measured counterclockwise from x-axis)
+        Jogs stage in direction of bearing (measured in degrees counterclockwise from x-axis)
         '''
 
-        x_speed = self.x_motor.get_jog_parameters().max_velocity 
-        y_speed = self.y_motor.get_jog_parameters().max_velocity
+        bearing = np.deg2rad(bearing)
+        x_params = self.x_motor.get_jog_parameters()
+        y_params = self.y_motor.get_jog_parameters()
+        x_speed = x_params.max_velocity 
+        y_speed = y_params.max_velocity
+        x_accl = x_params.acceleration 
+        y_accl = y_params.acceleration 
 
-        self.x_motor.setup_jog(max_velocity=x_speed * abs(np.cos(bearing)))
-        self.y_motor.setup_jog(max_velocity=y_speed * abs(np.sin(bearing)))
+        x_factor = np.cos(bearing)
+        y_factor = np.sin(bearing)
 
-        if np.cos(bearing) > 0:
-            self.x_motor.jog('+')
-        else:
-            self.x_motor.jog('-')
+        self.x_motor.setup_jog(max_velocity=x_speed * abs(x_factor), acceleration = x_accl * abs(x_factor), mode='continuous')
+        self.y_motor.setup_jog(max_velocity=y_speed * abs(y_factor), acceleration = y_accl * abs(y_factor), mode='continuous')
 
-        if np.sin(bearing) > 0:
-            self.y_motor.jog('+')
-        else:
-            self.y_motor.jog('-')
+        print(self.x_motor.get_jog_parameters(), self.y_motor.get_jog_parameters())
+        print(x_factor, y_factor)
+
+        if x_factor >= 0.01:
+            self.x_motor.jog('+', kind='builtin')
+            print('hello')
+        elif x_factor <= -0.01:
+            self.x_motor.jog('-', kind='builtin')
+
+        if y_factor >= 0.01:
+            self.y_motor.jog('-', kind='builtin')
+        elif y_factor <= -0.01:
+            self.y_motor.jog('+', kind='builtin')
 
         if quick_stop:
-            time.sleep(2)
+            time.sleep(1)
         else:
             self.x_motor.wait_for_stop()
             self.y_motor.wait_for_stop()
 
+        print('stop')
         self.x_motor.stop()
         self.y_motor.stop()
+        print('stopped')
 
-        self.x_motor.setup_jog(max_velocity=x_speed)
-        self.y_motor.setup_jog(max_velocity=y_speed)
+        self.x_motor.setup_jog(max_velocity=x_speed, acceleration=x_accl)
+        self.y_motor.setup_jog(max_velocity=y_speed, acceleration=y_accl)
     
     # Manually Control Motors
     def start_manual_control(self, stop='esc', focus_comport=None, turret_comport=None):
