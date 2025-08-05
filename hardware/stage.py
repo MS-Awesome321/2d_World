@@ -219,6 +219,39 @@ class Stage:
 
     def move_home(self):
         self.move_to(self.home_location)
+
+    def jog_in_direction(self, bearing, quick_stop=True):
+        '''
+        Jogs stage in direction of bearing (measured counterclockwise from x-axis)
+        '''
+
+        x_speed = self.x_motor.get_jog_parameters().max_velocity 
+        y_speed = self.y_motor.get_jog_parameters().max_velocity
+
+        self.x_motor.setup_jog(max_velocity=x_speed * abs(np.cos(bearing)))
+        self.y_motor.setup_jog(max_velocity=y_speed * abs(np.sin(bearing)))
+
+        if np.cos(bearing) > 0:
+            self.x_motor.jog('+')
+        else:
+            self.x_motor.jog('-')
+
+        if np.sin(bearing) > 0:
+            self.y_motor.jog('+')
+        else:
+            self.y_motor.jog('-')
+
+        if quick_stop:
+            time.sleep(2)
+        else:
+            self.x_motor.wait_for_stop()
+            self.y_motor.wait_for_stop()
+
+        self.x_motor.stop()
+        self.y_motor.stop()
+
+        self.x_motor.setup_jog(max_velocity=x_speed)
+        self.y_motor.setup_jog(max_velocity=y_speed)
     
     # Manually Control Motors
     def start_manual_control(self, stop='esc', focus_comport=None, turret_comport=None):
