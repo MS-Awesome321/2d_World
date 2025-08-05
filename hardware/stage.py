@@ -259,10 +259,8 @@ class Stage:
             self.x_motor.wait_for_stop()
             self.y_motor.wait_for_stop()
 
-        print('stop')
-        self.x_motor.stop()
-        self.y_motor.stop()
-        print('stopped')
+        self.x_motor.stop(sync=False)
+        self.y_motor.stop(sync=False)
 
         self.x_motor.setup_jog(max_velocity=x_speed, acceleration=x_accl)
         self.y_motor.setup_jog(max_velocity=y_speed, acceleration=y_accl)
@@ -291,27 +289,27 @@ class Stage:
 
             if key.name == 'up':
                 if key.event_type == 'up':
-                    self.y_motor.stop('-')
+                    self.y_motor.stop(sync=False)
                 else:
-                    self.y_motor.jog('-')
+                    self.y_motor.jog('-', kind='builtin')
             
             elif key.name == 'down':
                 if key.event_type == 'up':
-                    self.y_motor.stop()
+                    self.y_motor.stop(sync=False)
                 else:
-                    self.y_motor.jog('+')
+                    self.y_motor.jog('+', kind='builtin')
 
             elif key.name == 'left':
                 if key.event_type == 'up':
-                    self.x_motor.stop()
+                    self.x_motor.stop(sync=False)
                 else:
-                    self.x_motor.jog('-')
+                    self.x_motor.jog('-', kind='builtin')
             
             elif key.name == 'right':
                 if key.event_type == 'up':
-                    self.x_motor.stop()
+                    self.x_motor.stop(sync=False)
                 else:
-                    self.x_motor.jog('+')
+                    self.x_motor.jog('+', kind='builtin')
             
             elif key.name == 'm':
                 current_pos = self.get_pos()
@@ -330,6 +328,19 @@ class Stage:
                 current_pos = self.get_pos()
                 print(f'Current Position: {np.array(current_pos)}')
                 time.sleep(0.25)
+
+            elif key.name == '+':
+                x_speed = self.x_motor.get_jog_parameters().max_velocity
+                y_speed = self.y_motor.get_jog_parameters().max_velocity
+                self.x_motor.setup_jog(max_velocity=(x_speed + 10_000))
+                self.y_motor.setup_jog(max_velocity=(y_speed + 10_000))
+                print(self.x_motor.get_jog_parameters().max_velocity, self.y_motor.get_jog_parameters().max_velocity)
+            elif key.name == '_':
+                x_speed = self.x_motor.get_jog_parameters().max_velocity
+                y_speed = self.y_motor.get_jog_parameters().max_velocity
+                self.x_motor.setup_jog(max_velocity=(x_speed - 10_000))
+                self.y_motor.setup_jog(max_velocity=(y_speed - 10_000))
+                print(self.x_motor.get_jog_parameters().max_velocity, self.y_motor.get_jog_parameters().max_velocity)
 
             if turret_comport:
                 if key.name == '1':
