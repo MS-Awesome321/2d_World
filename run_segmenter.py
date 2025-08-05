@@ -69,7 +69,7 @@ f2 = focus_disk(g1, rad - 10, invert=True)
 
 # Initialize Segmenter
 watch.clock()
-segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=magnification, min_area=50, focus_disks=[(f, rad), (f2, rad - 10)])
+segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=magnification, min_area=50, focus_disks=[(f, rad), (f2, rad - 10)], k=3)
 print(segmenter.edge_method.mag)
 # watch.clock()
 segmenter.make_masks(
@@ -126,7 +126,7 @@ if i is not None and i <= segmenter.num_masks:
     print(centroid)
     axs[1,1].scatter(*centroid[::-1])
 
-axs[1,0].imshow(segmenter.lab[:,:,1], cmap='inferno')
+axs[1,0].imshow(segmenter.lab[:,:,0], cmap='inferno')
 axs[1,0].axis('off')
 axs[1,0].format_coord = format_coord
 

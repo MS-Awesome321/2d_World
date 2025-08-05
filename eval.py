@@ -25,8 +25,8 @@ colors_by_layer = {
 
 # image_path = os.listdir("../monolayerGraphene/monolayer_Graphene/")[int(sys.argv[1])]
 
-dir = '/Users/mayanksengupta/Downloads/m_100_2/m_100'
-result_dir = '/Users/mayanksengupta/Downloads/m_100_2/m_100_results2'
+dir = '/Users/mayanksengupta/Downloads/extra'
+result_dir = '/Users/mayanksengupta/Downloads/extra'
 files = os.listdir(dir)
 
 monolayer_sizes = np.array([])
@@ -35,7 +35,7 @@ bilayer_sizes = np.array([])
 bi_frame_nums = np.array([])
 
 grow = 2
-rad = int(410*grow)
+rad = int(430*grow)
 f1 = focus_disk(np.zeros((755 * grow, 1350 * grow)), rad, invert=True)
 f2 = focus_disk(np.zeros((755 * grow, 1350 * grow)), rad - 10, invert=True)
 
