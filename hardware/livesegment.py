@@ -78,9 +78,9 @@ class LiveSegment():
             i = int(filename[filename.index('_') + 1:filename.index('.')])
         elif 'm100' in filename:
             start = filename.index('_') + 1
-            start = filename.index('_', start)
+            start = filename.index('_', start) + 1
             end = filename.index('.')
-            i = int(filename[start:filename.index('.') : end])
+            i = int(filename[start : end])
         mono_frame_nums = i*np.ones_like(mono_size)
         bi_frame_nums = i*np.ones_like(bi_size)
 

@@ -165,7 +165,7 @@ class EntropyEdgeMethod(EdgeMethod):
        disk_radius = 1
        percentile_threshold = 80
     else:
-      disk_radius = 4
+      disk_radius = 3
       percentile_threshold = 85
 
     footprint = disk(disk_radius)
@@ -235,6 +235,8 @@ graphene_labels = { # cielab colorspace
                   (75, 0, 35): 'bulk',
                   (80, 5, 10): 'bulk',
                   (35, 1, 36): 'bulk',
+                  (48, 10, 3.5): 'dirt',
+                  (48, 9, 2.5): 'dirt',
                   (48.1, 6.7, -1.4): 'dirt',
                   (53, 0, 8.5): 'dirt',
                   (39, 8, 8): 'dirt',

@@ -30,14 +30,14 @@ test_stage = Stage(x, y, focus_comport='COM5', magnification=10)
 test_stage.set_direction(180)
 test_stage.set_home()
 test_stage.set_chip_dims(1.7, 0.86)
-z_plane = [-3600, -1240, 2170]
+z_plane =  [-4430, -4860, -320]
 test_stage.x_motor.setup_velocity(max_velocity=4_000_000, acceleration=8_000_000)
 test_stage.y_motor.setup_velocity(max_velocity=4_000_000, acceleration=8_000_000)
 
 
 def get_exact_location(coord, flake_location, frame_dims):
-    coord[0] += 103_900*(flake_location[1]/frame_dims[1] - 0.5)
-    coord[1] += 57_700*(flake_location[0]/frame_dims[0] - 0.5)
+    coord[0] += 108_780*(flake_location[1]/frame_dims[1] - 0.5)
+    coord[1] += 57_720*(flake_location[0]/frame_dims[0] - 0.5)
     return coord
 
 coords = np.stack(test_stage.get_snake(z_plane), axis=0)
@@ -70,16 +70,17 @@ f_nums = f_nums[idxs]
 x_s, y_s = x_s[idxs], y_s[idxs]
 
 temp = test_stage.focus_motor.get_pos()
-incremental_check(test_stage.focus_motor, 0, 10, 1000, backpedal = True, auto_direction=True, slope_threshold=-0.0125) # Realign focus at the start
+incremental_check(test_stage.focus_motor, 0, 10, 1000, backpedal = True, auto_direction=True, slope_threshold=-2**(-8)) # Realign focus at the start
 test_stage.focus_motor.position = temp
 
 prev_frame = None
 
-try:
-    lens.rotate_to_position(4)
-    print(f'Home: {test_stage.home_location}')
 
-    for i in tqdm(range(num_top_matches)):
+lens.rotate_to_position(4)
+print(f'Home: {test_stage.home_location}')
+
+for i in tqdm(range(num_top_matches)):
+    try:
         if keyboard.is_pressed('q'):
             break
 
@@ -90,15 +91,15 @@ try:
         coord = [int(e) for e in coord.tolist()]
 
         if prev_frame is not None and prev_frame == f_num:
-            coord[2] = prev_pos + 250
-            test_stage.move_to(coord)
+            coord[2] = prev_pos + 200
+            test_stage.move_to(coord, wait=True)
         else:
-            coord[2] -= 350
-            test_stage.move_to(coord)
+            coord[2] -= 250
+            test_stage.move_to(coord, wait=True)
         prev_frame = f_num
 
         time.sleep(0.5)
-        final_frame, prev_pos = incremental_check(test_stage.focus_motor, 0, 15, 750, slope_threshold=-0.025)
+        final_frame, prev_pos = incremental_check(test_stage.focus_motor, 0, 15, 1000, slope_threshold=-2**(-6), verbose=True)
 
         if final_frame is not None:
             cv2.imwrite(f'{photo_dir}/m_100/m100_{f_num}_{i}.jpg', final_frame)
@@ -106,9 +107,9 @@ try:
             print(f'{f_num} {i} is None')
             prev_pos = coord[2]
 
-except Exception as e:
-    print(e)
-    pass
+    except Exception as e:
+        print(e)
+        pass
 
 lens.rotate_to_position(5)
 test_stage.move_home()

@@ -15,8 +15,9 @@ x = '27503936'
 y = '27503951'
 grow = 2
 max_area = 5000
-z_corners = [-3600, -1240, 2170]
+z_corners = [-4430, -4860, -320]
 result_txt = 'results.txt'
+results_100 = 'results100.txt'
 photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir'
 num_top_matches = int(sys.argv[1])
 
@@ -35,7 +36,7 @@ try:
 
     # Ensure Optimal Camera Focus
     temp = test_stage.focus_motor.get_pos()
-    incremental_check(test_stage.focus_motor, 0, 10, 1000, backpedal = True, auto_direction=True, slope_threshold=-0.025) # Realign focus at the start
+    incremental_check(test_stage.focus_motor, 0, 10, 1000, backpedal = True, auto_direction=True, slope_threshold=-2**(-8)) # Realign focus at the start
     test_stage.focus_motor.position = temp
 
     # Perform Autosearch
@@ -98,14 +99,14 @@ x_s, y_s = x_s[idxs], y_s[idxs]
 
 # Ensure Optimal Camera Focus
 temp = test_stage.focus_motor.get_pos()
-incremental_check(test_stage.focus_motor, 0, 10, 1000, backpedal = True, auto_direction=True, slope_threshold=-0.0125) # Realign focus at the start
+incremental_check(test_stage.focus_motor, 0, 10, 1000, backpedal = True, auto_direction=True, slope_threshold=-2**(-8)) # Realign focus at the start
 test_stage.focus_motor.position = temp
 
 # FLAKE REFINDING
 try:
     prev_frame = None
     lens.rotate_to_position(4)
-    clear_results('results100.txt')
+    clear_results(results_100)
 
     for i in tqdm(range(num_top_matches)):
         if keyboard.is_pressed('q'):
@@ -118,15 +119,15 @@ try:
         coord = [int(e) for e in coord.tolist()]
 
         if prev_frame is not None and prev_frame == f_num:
-            coord[2] = prev_pos + 250
-            test_stage.move_to(coord)
+            coord[2] = prev_pos + 200
+            test_stage.move_to(coord, wait=True)
         else:
-            coord[2] -= 350
-            test_stage.move_to(coord)
+            coord[2] -= 150
+            test_stage.move_to(coord, wait=True)
         prev_frame = f_num
 
         time.sleep(0.5)
-        final_frame, prev_pos = incremental_check(test_stage.focus_motor, 0, 15, 750, slope_threshold=-0.025)
+        final_frame, prev_pos = incremental_check(test_stage.focus_motor, 0, 15, 1000, slope_threshold=-2**(-6))
 
         if final_frame is not None:
             cv2.imwrite(f'{photo_dir}/m_100/m100_{f_num}_{i}.jpg', final_frame)
@@ -140,3 +141,6 @@ except Exception as e:
 
 lens.rotate_to_position(5)
 test_stage.move_home()
+
+# Sort and organize 10x results for refinding
+sort_results(results_100)
