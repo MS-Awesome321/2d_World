@@ -332,14 +332,15 @@ class Stage:
             elif key.name == '+':
                 x_speed = self.x_motor.get_jog_parameters().max_velocity
                 y_speed = self.y_motor.get_jog_parameters().max_velocity
-                self.x_motor.setup_jog(max_velocity=(x_speed + 10_000))
-                self.y_motor.setup_jog(max_velocity=(y_speed + 10_000))
+                self.x_motor.setup_jog(max_velocity=(x_speed + 1_000))
+                self.y_motor.setup_jog(max_velocity=(y_speed + 1_000))
                 print(self.x_motor.get_jog_parameters().max_velocity, self.y_motor.get_jog_parameters().max_velocity)
             elif key.name == '_':
                 x_speed = self.x_motor.get_jog_parameters().max_velocity
                 y_speed = self.y_motor.get_jog_parameters().max_velocity
-                self.x_motor.setup_jog(max_velocity=(x_speed - 10_000))
-                self.y_motor.setup_jog(max_velocity=(y_speed - 10_000))
+                if x_speed > 1_000 and y_speed > 1_000:
+                    self.x_motor.setup_jog(max_velocity=(x_speed - 1_000))
+                    self.y_motor.setup_jog(max_velocity=(y_speed - 1_000))
                 print(self.x_motor.get_jog_parameters().max_velocity, self.y_motor.get_jog_parameters().max_velocity)
 
             if turret_comport:
