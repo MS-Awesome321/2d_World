@@ -62,6 +62,11 @@ class Stage:
         self.long_edge = None                # set later in µm
         self.short_edge = None               # set later in µm
 
+        x_params = self.x_motor.get_jog_parameters()
+        y_params = self.y_motor.get_jog_parameters()
+        self.x_speed, self.x_accl = x_params.max_velocity, x_params.acceleration
+        self.y_speed, self.y_accl = y_params.max_velocity, y_params.acceleration
+
     def set_home(self, coords=None):
         """
         Define the chip origin.  If *coords* is omitted, the current stage
@@ -204,9 +209,11 @@ class Stage:
     # Stop Motor Motion
     def stop(self):
         for motor in self.motors:
-            motor.stop()
-            motor.wait_for_stop()
+            motor.stop(sync=False)
         
+        for motor in self.motors:
+            motor.wait_for_stop()
+
         return True
     
     def move_to(self, location, wait=False):
@@ -226,44 +233,31 @@ class Stage:
         '''
 
         bearing = np.deg2rad(bearing)
-        x_params = self.x_motor.get_jog_parameters()
-        y_params = self.y_motor.get_jog_parameters()
-        x_speed = x_params.max_velocity 
-        y_speed = y_params.max_velocity
-        x_accl = x_params.acceleration 
-        y_accl = y_params.acceleration 
 
         x_factor = np.cos(bearing)
         y_factor = np.sin(bearing)
 
-        self.x_motor.setup_jog(max_velocity=x_speed * abs(x_factor), acceleration = x_accl * abs(x_factor), mode='continuous')
-        self.y_motor.setup_jog(max_velocity=y_speed * abs(y_factor), acceleration = y_accl * abs(y_factor), mode='continuous')
-
-        print(self.x_motor.get_jog_parameters(), self.y_motor.get_jog_parameters())
-        print(x_factor, y_factor)
+        self.x_motor.setup_jog(max_velocity=self.x_speed * abs(x_factor), acceleration=self.x_accl, mode='continuous')
+        self.y_motor.setup_jog(max_velocity=self.y_speed * abs(y_factor), acceleration=self.y_accl, mode='continuous')
 
         if x_factor >= 0.01:
             self.x_motor.jog('+', kind='builtin')
-            print('hello')
         elif x_factor <= -0.01:
             self.x_motor.jog('-', kind='builtin')
+        else:
+            self.x_motor.stop(immediate=True, sync=False)
 
         if y_factor >= 0.01:
             self.y_motor.jog('-', kind='builtin')
         elif y_factor <= -0.01:
             self.y_motor.jog('+', kind='builtin')
+        else:
+            self.y_motor.stop(immediate=True, sync=False)
 
         if quick_stop:
             time.sleep(1)
-        else:
-            self.x_motor.wait_for_stop()
-            self.y_motor.wait_for_stop()
-
-        self.x_motor.stop(sync=False)
-        self.y_motor.stop(sync=False)
-
-        self.x_motor.setup_jog(max_velocity=x_speed, acceleration=x_accl)
-        self.y_motor.setup_jog(max_velocity=y_speed, acceleration=y_accl)
+            self.x_motor.stop(sync=False)
+            self.y_motor.stop(sync=False)
     
     # Manually Control Motors
     def start_manual_control(self, stop='esc', focus_comport=None, turret_comport=None):
@@ -295,13 +289,13 @@ class Stage:
             
             elif key.name == 'down':
                 if key.event_type == 'up':
-                    self.y_motor.stop(sync=False)
+                    self.y_motor.stop(immediate=True, sync=False)
                 else:
                     self.y_motor.jog('+', kind='builtin')
 
             elif key.name == 'left':
                 if key.event_type == 'up':
-                    self.x_motor.stop(sync=False)
+                    self.x_motor.stop(immediate=True, sync=False)
                 else:
                     self.x_motor.jog('-', kind='builtin')
             

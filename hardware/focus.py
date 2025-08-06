@@ -120,7 +120,7 @@ class Focus:
     def home(self):
         self.rotate_relative(self.position)
 
-    def stop(self):
+    def stop(self, sync=False):
         value_bytes = self.um2byte(0)
         cmd = self.start_command(value_bytes, stop=1)
         checksum = self.calculate_checksum(cmd)
