@@ -143,9 +143,9 @@ try:
             stage.jog_in_direction(prev_direction, quick_stop=False)
 
 
-        if counter % 3 == 0 and len(angles) < 5:
+        if counter % 5 == 0 and len(angles) < 5:
             stage.jog_in_direction(prev_direction + 90, quick_stop=False)
-            time.sleep(0.15)
+            time.sleep(0.2)
             stage.jog_in_direction(prev_direction, quick_stop=False)
         counter += 1
 
