@@ -3,6 +3,8 @@ import numpy as np
 from PIL import ImageGrab
 from stage import Stage
 import time
+import matplotlib.pyplot as plt
+from scipy.spatial import ConvexHull
 
 # cap = cv2.VideoCapture('test_video.mp4')
 shrink = 4
@@ -45,7 +47,9 @@ try:
     counter = 0
     limit = 0
 
-    while True:
+    points = []
+
+    while len(points) < 120:
         # ret, frame = cap.read()
         # if not ret:
         #     break
@@ -103,12 +107,9 @@ try:
                     pt1 = tuple(pts[i])
                     pt2 = tuple(pts[(i + 1) % len(pts)])
                     if (pt1 in inner_corners and pt2 in inner_corners) or pt1 in true_corners or pt2 in true_corners:
-                        if i==0:
-                            cv2.arrowedLine(frame, pt1, pt2, (0, 255, 0), 2, tipLength=0.1)
-                        else:
-                            cv2.arrowedLine(frame, pt1, pt2, (0, 255, 255), 2, tipLength=0.1)
+                        cv2.arrowedLine(frame, pt1, pt2, (0, 255, 255), 2, tipLength=0.1)
                         angles.append(round(get_angle(pt1, pt2), 2))
-                cv2.putText(frame, f'{angles}', org, font, fontScale, color, thickness, cv2.LINE_AA)
+                # cv2.putText(frame, f'{angles}', org, font, fontScale, color, thickness, cv2.LINE_AA)
 
         cv2.imshow('Line Test', frame)
         if cv2.waitKey(25) & 0xFF == ord('q'):
@@ -142,14 +143,48 @@ try:
             stage.jog_in_direction(prev_direction, quick_stop=False)
 
 
-        if counter % 5 == 0 and len(angles) < 5:
+        if counter % 3 == 0 and len(angles) < 5:
             stage.jog_in_direction(prev_direction + 90, quick_stop=False)
-            time.sleep(0.2)
+            time.sleep(0.15)
             stage.jog_in_direction(prev_direction, quick_stop=False)
         counter += 1
 
+        points.append(stage.get_pos())
 
 except KeyboardInterrupt:
     pass
 cv2.destroyAllWindows()
 stage.stop()
+
+points = np.stack(points, axis=0)
+plt.scatter(points[:,0], points[:,1])
+
+hull = ConvexHull(points)
+for simplex in hull.simplices:
+    plt.plot(points[simplex, 0], points[simplex, 1], 'k-')
+
+# Get hull vertices in order
+hull_pts = points[hull.vertices]
+num_hull = len(hull.vertices)
+
+# Calculate angles at each hull vertex (using previous, current, next)
+angles = []
+for i in range(num_hull):
+    prev_pt = hull_pts[i - 1]
+    curr_pt = hull_pts[i]
+    next_pt = hull_pts[(i + 1) % num_hull]
+    v1 = prev_pt - curr_pt
+    v2 = next_pt - curr_pt
+    # Normalize vectors
+    v1 = v1 / np.linalg.norm(v1)
+    v2 = v2 / np.linalg.norm(v2)
+    # Compute angle in degrees
+    cos_angle = np.clip(np.dot(v1, v2), -1.0, 1.0)
+    angle = np.degrees(np.arccos(cos_angle))
+    angles.append(angle)
+
+# Find indices of the 4 most acute angles (smallest angles)
+acute_indices = np.argsort(angles)[:4]
+
+plt.scatter(hull_pts[acute_indices,0], hull_pts[acute_indices,1], color='red')
+plt.show()
