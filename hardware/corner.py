@@ -5,6 +5,9 @@ from stage import Stage
 import time
 import matplotlib.pyplot as plt
 from scipy.spatial import ConvexHull
+from autofocus import incremental_check
+from turret import Turret
+
 
 # cap = cv2.VideoCapture('test_video.mp4')
 shrink = 4
@@ -38,18 +41,21 @@ try:
     x = '27503936'
     y = '27503951'
 
-    stage = Stage(x, y, magnification=5)
-    stage.x_speed = 150_000
-    stage.y_speed = 150_000
+    stage = Stage(x, y, focus_comport='COM5', magnification=5)
+    stage.x_speed = 100_000
+    stage.y_speed = 100_000
     stage.x_accl = 700_000
     stage.y_accl = 700_000
     prev_direction = 0
     counter = 0
     limit = 0
 
+    lens = Turret('COM7')
+    lens.rotate_to_position(1)
+
     points = []
 
-    while len(points) < 120:
+    while len(points) < 200:
         # ret, frame = cap.read()
         # if not ret:
         #     break
@@ -135,7 +141,7 @@ try:
             if is_corner:
                 stage.jog_in_direction(max_angle, quick_stop=False)
                 prev_direction = max_angle
-                limit = counter + 20
+                limit = counter + 30
             else:
                 stage.jog_in_direction(min_angle, quick_stop=False)
                 prev_direction = min_angle
@@ -143,13 +149,13 @@ try:
             stage.jog_in_direction(prev_direction, quick_stop=False)
 
 
-        if counter % 5 == 0 and len(angles) < 5:
+        if len(angles) < 4:
             stage.jog_in_direction(prev_direction + 90, quick_stop=False)
-            time.sleep(0.2)
+            time.sleep(0.33)
             stage.jog_in_direction(prev_direction, quick_stop=False)
+        else:
+            points.append(stage.get_pos()[:2])
         counter += 1
-
-        points.append(stage.get_pos())
 
 except KeyboardInterrupt:
     pass
@@ -188,3 +194,15 @@ acute_indices = np.argsort(angles)[:4]
 
 plt.scatter(hull_pts[acute_indices,0], hull_pts[acute_indices,1], color='red')
 plt.show()
+
+stage.x_motor.setup_velocity(max_velocity=200_000, acceleration=1_000_000)
+stage.y_motor.setup_velocity(max_velocity=200_000, acceleration=1_000_000)
+
+# lens.rotate_to_position(5)
+for i in acute_indices:
+    corner = [hull_pts[i, 0], hull_pts[i, 1]]
+    print(corner)
+    stage.move_to(corner, wait=True)
+    time.sleep(0.25)
+    frame, max_pos = incremental_check(stage.focus_motor, 0, 100, 6000, slope_threshold=-2**(-9), verbose=True, auto_direction=True)
+    print(max_pos)

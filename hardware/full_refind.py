@@ -2,6 +2,7 @@ import os
 from stage import Stage
 import time
 from autofocus import incremental_check, autofocus
+from search_utils import sort_results, clear_results
 import numpy as np
 from PIL import ImageGrab
 import cv2
@@ -11,6 +12,7 @@ import keyboard
 import sys
 
 result_txt = 'results.txt'
+results_100 = 'results100.txt'
 grow = 2
 
 if os.path.exists(result_txt):
@@ -29,8 +31,8 @@ photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir'
 test_stage = Stage(x, y, focus_comport='COM5', magnification=10)
 test_stage.set_direction(180)
 test_stage.set_home()
-test_stage.set_chip_dims(1.7, 0.86)
-z_plane =  [-4430, -4860, -320]
+test_stage.set_chip_dims(1.7, 1.03)
+z_plane =  [-4540, -5330, -860]
 test_stage.x_motor.setup_velocity(max_velocity=4_000_000, acceleration=8_000_000)
 test_stage.y_motor.setup_velocity(max_velocity=4_000_000, acceleration=8_000_000)
 
@@ -78,6 +80,7 @@ prev_frame = None
 
 lens.rotate_to_position(4)
 print(f'Home: {test_stage.home_location}')
+clear_results(results_100)
 
 for i in tqdm(range(num_top_matches)):
     try:
@@ -94,12 +97,12 @@ for i in tqdm(range(num_top_matches)):
             coord[2] = prev_pos + 200
             test_stage.move_to(coord, wait=True)
         else:
-            coord[2] -= 250
+            coord[2] -= 0
             test_stage.move_to(coord, wait=True)
         prev_frame = f_num
 
         time.sleep(0.5)
-        final_frame, prev_pos = incremental_check(test_stage.focus_motor, 0, 15, 1000, slope_threshold=-2**(-6), verbose=True)
+        final_frame, prev_pos = incremental_check(test_stage.focus_motor, 0, 15, 1000, slope_threshold=-2**(-6), verbose=False)
 
         if final_frame is not None:
             cv2.imwrite(f'{photo_dir}/m_100/m100_{f_num}_{i}.jpg', final_frame)
@@ -113,3 +116,4 @@ for i in tqdm(range(num_top_matches)):
 
 lens.rotate_to_position(5)
 test_stage.move_home()
+sort_results(results_100)

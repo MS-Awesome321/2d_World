@@ -42,6 +42,9 @@ def incremental_check(focus_motor, start, step, max, window_size=5, shrink=2, bb
     i = start
     flipped = False
 
+    if verbose:
+        print(i, score, flipped)
+
     score_window = collections.deque([score], maxlen=window_size)
 
     while abs(i) < abs(max):
@@ -68,17 +71,23 @@ def incremental_check(focus_motor, start, step, max, window_size=5, shrink=2, bb
             avg_slope = (score_window[-1] - score_window[0]) / (window_size)
 
             if verbose:
-                print(i, score, avg_slope)
+                print(i, score, avg_slope, flipped)
 
             if avg_slope < min_slope:
                 min_slope = avg_slope
+
+            # if (auto_direction and not flipped) and (score < 1.3 and abs(i) > abs(max / 2)):
+            #     step *= -1
+            #     flipped = True
+            #     score_window = collections.deque([], maxlen=window_size)
+            #     time.sleep(0.5)
             
             if avg_slope < slope_threshold:
-                if auto_direction and (not flipped and score < first_score):
+                if auto_direction and (not flipped and (score < first_score)):
                     step *= -1
                     flipped = True
                     score_window = collections.deque([], maxlen=window_size)
-                    time.sleep(1)
+                    time.sleep(0.5)
                 else:
                     break
 
