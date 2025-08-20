@@ -7,7 +7,9 @@ import matplotlib.pyplot as plt
 from scipy.spatial import ConvexHull
 from autofocus import incremental_check
 from turret import Turret
-
+import sys
+sys.path.append('C:/Users/admin/Desktop/2d_World/')
+from utils import Stopwatch
 
 # cap = cv2.VideoCapture('test_video.mp4')
 shrink = 4
@@ -50,6 +52,9 @@ try:
     counter = 0
     limit = 0
 
+    watch = Stopwatch()
+    watch.clock()
+    
     lens = Turret('COM7')
     lens.rotate_to_position(1)
 
@@ -151,7 +156,7 @@ try:
 
         if len(angles) < 4:
             stage.jog_in_direction(prev_direction + 90, quick_stop=False)
-            time.sleep(0.33)
+            time.sleep(0.05)
             stage.jog_in_direction(prev_direction, quick_stop=False)
         else:
             points.append(stage.get_pos()[:2])
@@ -169,7 +174,6 @@ hull = ConvexHull(points)
 for simplex in hull.simplices:
     plt.plot(points[simplex, 0], points[simplex, 1], 'k-')
 
-# Get hull vertices in order
 hull_pts = points[hull.vertices]
 num_hull = len(hull.vertices)
 
@@ -192,17 +196,63 @@ for i in range(num_hull):
 # Find indices of the 4 most acute angles (smallest angles)
 acute_indices = np.argsort(angles)[:4]
 
-plt.scatter(hull_pts[acute_indices,0], hull_pts[acute_indices,1], color='red')
+# Rearrange acute_indices so that the points are in clockwise order starting from the bottom right
+acute_points = hull_pts[acute_indices]
+
+# Find bottom right (largest x, smallest y)
+start_idx = np.argmax(acute_points[:,1] - acute_points[:,0])  # prioritize largest x, then smallest y
+acute_points_ordered = np.roll(acute_points, start_idx, axis=0)
+
+# Compute angles for sorting clockwise
+center = np.mean(acute_points_ordered, axis=0)
+angles_cw = np.arctan2(acute_points_ordered[:,1] - center[1], acute_points_ordered[:,0] - center[0])
+acute_points_cw = acute_points_ordered[np.argsort(angles_cw)]  # negative for clockwise
+
+# Now get the indices in hull_pts corresponding to acute_points_cw
+acute_indices_cw = [np.where((hull_pts == pt).all(axis=1))[0][0] for pt in acute_points_cw]
+acute_indices_cw = np.roll(acute_indices_cw, 2, axis=0)
+
+watch.clock()
+
+plt.scatter(hull_pts[acute_indices_cw,0], hull_pts[acute_indices_cw,1], color='red')
 plt.show()
+
+watch.clock()
 
 stage.x_motor.setup_velocity(max_velocity=200_000, acceleration=1_000_000)
 stage.y_motor.setup_velocity(max_velocity=200_000, acceleration=1_000_000)
 
-# lens.rotate_to_position(5)
-for i in acute_indices:
+z_corners = []
+corners = []
+for i in acute_indices_cw:
     corner = [hull_pts[i, 0], hull_pts[i, 1]]
     print(corner)
+    lens.rotate_to_position(1)
     stage.move_to(corner, wait=True)
     time.sleep(0.25)
-    frame, max_pos = incremental_check(stage.focus_motor, 0, 100, 6000, slope_threshold=-2**(-9), verbose=True, auto_direction=True)
+    frame, max_pos = incremental_check(stage.focus_motor, 0, 200, 6000, slope_threshold=-2**(-9), verbose=True, auto_direction=True)
     print(max_pos)
+    lens.rotate_to_position(5)
+    time.sleep(1)
+    frame, max_pos = incremental_check(stage.focus_motor, 0, 50, 2000, slope_threshold=-2**(-8), verbose=True, auto_direction=True)
+    print(max_pos)
+    z_corners.append(max_pos)
+    corners.append(corner)
+
+z0 = z_corners[0]
+z_corners = [z - z0 for z in z_corners]
+print(z_corners)
+
+corners_arr = np.array(corners)
+side_lengths = [np.linalg.norm(corners_arr[i] - corners_arr[(i+1)%4]) for i in range(4)]
+length = max(side_lengths)
+width = min(side_lengths)
+print(f"Rectangle length: {length:.2f}, width: {width:.2f}")
+print(f"Rectangle length: {length/610_000:.2f}, width: {width/610_000:.2f}")
+
+delta_x = corners[1][0] - corners[0][0]
+delta_y = corners[1][1] - corners[0][1]
+
+angle = 180 + np.rad2deg(np.arctan(delta_y / delta_x))
+
+watch.clock()
