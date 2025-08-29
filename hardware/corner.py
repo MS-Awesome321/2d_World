@@ -168,13 +168,12 @@ def calibrate_corners(is_main: bool = False) -> tuple[List[int], List[float], in
                 stage.jog_in_direction(prev_direction, quick_stop=False)
 
 
-        if len(angles) < 4:
-            stage.jog_in_direction(prev_direction + 90, quick_stop=False)
-            time.sleep(0.05)
-            stage.jog_in_direction(prev_direction, quick_stop=False)
-        else:
-            points.append(stage.get_pos()[:2])
-        counter += 1
+            if len(angles) < 4:
+                stage.jog_in_direction(prev_direction + 90, quick_stop=False)
+                time.sleep(0.05)
+                stage.jog_in_direction(prev_direction, quick_stop=False)
+            else:
+                points.append(stage.get_pos()[:2])
 
     except KeyboardInterrupt:
         pass
@@ -240,22 +239,22 @@ def calibrate_corners(is_main: bool = False) -> tuple[List[int], List[float], in
     stage.x_motor.setup_velocity(max_velocity=200_000, acceleration=1_000_000)
     stage.y_motor.setup_velocity(max_velocity=200_000, acceleration=1_000_000)
 
-z_corners = []
-corners = []
-for i in acute_indices_cw:
-    corner = [hull_pts[i, 0], hull_pts[i, 1]]
-    print(corner)
-    lens.rotate_to_position(1)
-    stage.move_to(corner, wait=True)
-    time.sleep(0.25)
-    frame, max_pos = incremental_check(stage.focus_motor, 0, 200, 6000, slope_threshold=-2**(-9), verbose=True, auto_direction=True)
-    print(max_pos)
-    lens.rotate_to_position(5)
-    time.sleep(1)
-    frame, max_pos = incremental_check(stage.focus_motor, 0, 50, 2000, slope_threshold=-2**(-8), verbose=True, auto_direction=True)
-    print(max_pos)
-    z_corners.append(max_pos)
-    corners.append(corner)
+    z_corners = []
+    corners = []
+    for i in acute_indices_cw:
+        corner = [hull_pts[i, 0], hull_pts[i, 1]]
+        print(corner)
+        lens.rotate_to_position(1)
+        stage.move_to(corner, wait=True)
+        time.sleep(0.25)
+        frame, max_pos = incremental_check(stage.focus_motor, 0, 200, 6000, slope_threshold=-2**(-9), verbose=True, auto_direction=True)
+        print(max_pos)
+        lens.rotate_to_position(5)
+        time.sleep(1)
+        frame, max_pos = incremental_check(stage.focus_motor, 0, 50, 2000, slope_threshold=-2**(-8), verbose=True, auto_direction=True)
+        print(max_pos)
+        z_corners.append(max_pos)
+        corners.append(corner)
 
     z0 = z_corners[0]
     z_corners = [z - z0 for z in z_corners]
@@ -272,9 +271,15 @@ for i in acute_indices_cw:
         print(f"Rectangle length: {length:.2f}, width: {width:.2f}")
         print(f"Rectangle length: {length/610_000:.2f}, width: {width/610_000:.2f}")
 
-delta_x = corners[1][0] - corners[0][0]
-delta_y = corners[1][1] - corners[0][1]
+    delta_x = corners[1][0] - corners[0][0]
+    delta_y = corners[1][1] - corners[0][1]
 
     angle = 180 + np.rad2deg(np.arctan(delta_y / delta_x))
 
-watch.clock()
+    if is_main:
+        watch.clock()
+
+    return (z_corners, [length, width], angle)
+
+if __name__ == '__main__':
+    calibrate_corners(True)

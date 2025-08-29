@@ -49,15 +49,15 @@ def autosearch(z_corners: List[int], angle: int, chip_dims:List[int], num_top_ma
     test_stage = Stage(x, y, focus_comport='COM5', magnification=10)
     lens = Turret('COM7')
 
-# AUTOSEARCH
-try:
-    # Set Home, Direction, and Chip Corners
-    test_stage.set_direction(180)
-    test_stage.set_home()
-    print(f'Home: {test_stage.home_location}')
-    test_stage.set_chip_dims(1.7, 0.91)
-    test_stage.x_motor.setup_velocity(max_velocity=1_000_000, acceleration=2_000_000)
-    test_stage.y_motor.setup_velocity(max_velocity=1_000_000, acceleration=2_000_000)
+    # AUTOSEARCH
+    try:
+        # Set Home, Direction, and Chip Corners
+        test_stage.set_direction(angle)
+        test_stage.set_home()
+        print(f'Home: {test_stage.home_location}')
+        test_stage.set_chip_dims(*chip_dims)
+        test_stage.x_motor.setup_velocity(max_velocity=1_000_000, acceleration=2_000_000)
+        test_stage.y_motor.setup_velocity(max_velocity=1_000_000, acceleration=2_000_000)
 
         # Ensure Optimal Camera Focus
         temp = test_stage.focus_motor.get_pos()
