@@ -44,8 +44,8 @@ try:
     y = '27503951'
 
     stage = Stage(x, y, focus_comport='COM5', magnification=5)
-    stage.x_speed = 100_000
-    stage.y_speed = 100_000
+    stage.x_speed = 110_000
+    stage.y_speed = 110_000
     stage.x_accl = 700_000
     stage.y_accl = 700_000
     prev_direction = 0
@@ -156,7 +156,7 @@ try:
 
         if len(angles) < 4:
             stage.jog_in_direction(prev_direction + 90, quick_stop=False)
-            time.sleep(0.05)
+            time.sleep(0.1)
             stage.jog_in_direction(prev_direction, quick_stop=False)
         else:
             points.append(stage.get_pos()[:2])
@@ -236,6 +236,8 @@ for i in acute_indices_cw:
     time.sleep(1)
     frame, max_pos = incremental_check(stage.focus_motor, 0, 50, 2000, slope_threshold=-2**(-8), verbose=True, auto_direction=True)
     print(max_pos)
+    if max_pos is None:
+        max_pos = 0
     z_corners.append(max_pos)
     corners.append(corner)
 
@@ -250,9 +252,13 @@ width = min(side_lengths)
 print(f"Rectangle length: {length:.2f}, width: {width:.2f}")
 print(f"Rectangle length: {length/610_000:.2f}, width: {width/610_000:.2f}")
 
-delta_x = corners[1][0] - corners[0][0]
+delta_x = corners[1][0] - corners[0][0] # FIX THIS LATER!!!!!
 delta_y = corners[1][1] - corners[0][1]
 
 angle = 180 + np.rad2deg(np.arctan(delta_y / delta_x))
 
 watch.clock()
+
+idx = acute_indices[0]
+stage.move_to([hull_pts[idx, 0], hull_pts[idx, 1], z0], wait=True)
+time.sleep(0.25)

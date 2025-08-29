@@ -15,7 +15,7 @@ x = '27503936'
 y = '27503951'
 grow = 2
 max_area = 5000
-z_corners = [-4290, -5920, -960]
+z_corners = [-5150, -5600, -950]
 result_txt = 'results.txt'
 results_100 = 'results100.txt'
 photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir'
@@ -30,7 +30,7 @@ try:
     test_stage.set_direction(180)
     test_stage.set_home()
     print(f'Home: {test_stage.home_location}')
-    test_stage.set_chip_dims(1.7, 0.91)
+    test_stage.set_chip_dims(1.68, 0.97)
     test_stage.x_motor.setup_velocity(max_velocity=1_000_000, acceleration=2_000_000)
     test_stage.y_motor.setup_velocity(max_velocity=1_000_000, acceleration=2_000_000)
 
