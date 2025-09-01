@@ -6,3 +6,5 @@ hardware/results/
 hardware/old_m100_results/
 __pycache__
 hardware/__pycache__/
+photo_dir*
+results_*

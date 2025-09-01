@@ -29,15 +29,15 @@ if __name__ == "__main__":
     f1 = focus_disk(np.zeros((755 * grow, 1350 * grow)), rad, invert=True)
     f2 = focus_disk(np.zeros((755 * grow, 1350 * grow)), rad - 10, invert=True)
     if mag == 10:
-        photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir'
-        result_dir = 'C:/Users/admin/Desktop/2d_World/hardware/results'
-        result_txt = 'C:/Users/admin/Desktop/2d_World/hardware/results.txt'
+        photo_dir = sys.argv[2]
+        result_dir = sys.argv[3]
+        result_txt = sys.argv[4]
         event_handler = NewFileHandler()
         event_handler.set_run_method(LiveSegment(photo_dir, result_dir, result_txt, 10, focus_disks=[(f1, rad), (f2, rad-10)], grow=grow))
     elif mag == 100:
-        photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir/m_100'
-        result_dir = 'C:/Users/admin/Desktop/2d_World/hardware/results/m_100'
-        result_txt = 'C:/Users/admin/Desktop/2d_World/hardware/results100.txt'
+        photo_dir = sys.argv[2]
+        result_dir = sys.argv[3]
+        result_txt = sys.argv[4]
         event_handler = NewFileHandler()
         event_handler.set_run_method(LiveSegment(photo_dir, result_dir, result_txt, 100, focus_disks=[(f1, rad), (f2, rad-10)], grow=grow))
     else:

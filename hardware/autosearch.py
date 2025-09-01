@@ -8,10 +8,10 @@ y = '27503951'
 test_stage = Stage(x, y, focus_comport='COM5', magnification=10)
 
 try:
-    test_stage.set_direction(180)
+    test_stage.set_direction(182.34)
     test_stage.set_home()
     print(f'Home: {test_stage.home_location}')
-    test_stage.set_chip_dims(1.7, 0.86)
+    test_stage.set_chip_dims(1.62, 0.82)
     test_stage.x_motor.setup_velocity(max_velocity=1_000_000, acceleration=2_000_000)
     test_stage.y_motor.setup_velocity(max_velocity=1_000_000, acceleration=2_000_000)
 
@@ -28,7 +28,7 @@ try:
     # plt.show()
 
     wf = WF('C:/Users/admin/Desktop/2d_World/hardware/photo_dir', take_pic=True)
-    z_corners = [-4350, -5050, -620]
+    z_corners = [-3850, -4400, -700]
     clear_results('results.txt')
     test_stage.start_snake(z_corners=z_corners, wf = wf.wait_focus_and_click)
 

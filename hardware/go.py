@@ -11,7 +11,7 @@ import sys
 import os
 from typing import List
 
-def autosearch(z_corners: List[int], angle: int, chip_dims:List[int], num_top_matches: int = 25) -> tuple[str]:
+def autosearch(z_corners: List[int], angle: int, chip_dims:List[float], num_top_matches: int = 25, stage: Stage = None, lens: Turret = None, photo_dir: str = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir', is_main: bool = False) -> tuple[str]:
     '''
     Searches a silicon chip for monolayer and bilayer flakes. 
     First performs an snake scan of the full chip at 10x magnification
@@ -32,49 +32,64 @@ def autosearch(z_corners: List[int], angle: int, chip_dims:List[int], num_top_ma
 
         num_top_matches: The number of the largest flakes to image at 100x after the snake scan.
 
+        stage: Stage object to manipulate during autosearch. Defaults to a new 
+            Stage(x, y, focus_comport='COM5', magnification=10)
+
+        lens: Turret object to manipulate during autosearch and flake refinding. Defaults to a new
+            Turret('COM7)
+
+        is_main: Only set to True if run independently of other functions.
+
     Returns:
         result_paths: Paths to the results of the snake scan and the 100x flake verification steps 
             respectively, structured [result_txt, result_txt_m100].
     '''
     
     # Set up Motors
-    x = '27503936'
-    y = '27503951'
     grow = 2
     max_area = 5000
     result_txt = 'results.txt'
     result_txt_m100 = 'results100.txt'
-    photo_dir = 'C:/Users/admin/Desktop/2d_World/hardware/photo_dir'
 
-    test_stage = Stage(x, y, focus_comport='COM5', magnification=10)
-    lens = Turret('COM7')
+    if stage is None:
+        x = '27503936'
+        y = '27503951'
+        stage = Stage(x, y, focus_comport='COM5', magnification=10)
+
+    if lens is None:
+        lens = Turret('COM7')
 
     # AUTOSEARCH
     try:
         # Set Home, Direction, and Chip Corners
-        test_stage.set_direction(angle)
-        test_stage.set_home()
-        print(f'Home: {test_stage.home_location}')
-        test_stage.set_chip_dims(*chip_dims)
-        test_stage.x_motor.setup_velocity(max_velocity=1_000_000, acceleration=2_000_000)
-        test_stage.y_motor.setup_velocity(max_velocity=1_000_000, acceleration=2_000_000)
+        stage.set_direction(angle)
+        stage.set_home()
+        print(f'Home: {stage.home_location}')
+        print(chip_dims)
+        stage.set_chip_dims(*chip_dims)
+        stage.x_motor.setup_velocity(max_velocity=1_000_000, acceleration=2_000_000)
+        stage.y_motor.setup_velocity(max_velocity=1_000_000, acceleration=2_000_000)
 
         # Ensure Optimal Camera Focus
-        temp = test_stage.focus_motor.get_pos()
-        incremental_check(test_stage.focus_motor, 0, 10, 1000, backpedal = True, auto_direction=True, slope_threshold=-2**(-8)) # Realign focus at the start
-        test_stage.focus_motor.position = temp
+        temp = stage.focus_motor.get_pos()
+        incremental_check(stage.focus_motor, 0, 10, 1000, backpedal = True, auto_direction=True, slope_threshold=-2**(-8)) # Realign focus at the start
+        if is_main:
+            stage.focus_motor.position = temp
+        else:
+            stage.focus_motor.position = 0
 
         # Perform Autosearch
-        wf = WF('C:/Users/admin/Desktop/2d_World/hardware/photo_dir', take_pic=True)
+        wf = WF(photo_dir, take_pic=True)
         clear_results('results.txt')
-        test_stage.start_snake(z_corners=z_corners, wf = wf.wait_focus_and_click)
+        print(z_corners)
+        stage.start_snake(z_corners=z_corners, wf = wf.wait_focus_and_click)
 
 
     except KeyboardInterrupt:
         pass
 
-    test_stage.stop()
-    test_stage.move_home()
+    stage.stop()
+    stage.move_home()
     print('Stopped Motion.')
 
     # Sort and organize 10x results for refinding
@@ -87,8 +102,8 @@ def autosearch(z_corners: List[int], angle: int, chip_dims:List[int], num_top_ma
         for i in range(len(lines)):
             lines[i] = lines[i][lines[i].index(':') + 2 :]
 
-    test_stage.x_motor.setup_velocity(max_velocity=4_000_000, acceleration=8_000_000)
-    test_stage.y_motor.setup_velocity(max_velocity=4_000_000, acceleration=8_000_000)
+    stage.x_motor.setup_velocity(max_velocity=4_000_000, acceleration=8_000_000)
+    stage.y_motor.setup_velocity(max_velocity=4_000_000, acceleration=8_000_000)
 
 
     def get_exact_location(coord, flake_location, frame_dims):
@@ -96,7 +111,7 @@ def autosearch(z_corners: List[int], angle: int, chip_dims:List[int], num_top_ma
         coord[1] += 57_700*(flake_location[0]/frame_dims[0] - 0.5)
         return coord
 
-    coords = np.stack(test_stage.coords, axis=0)
+    coords = np.stack(stage.coords, axis=0)
 
     m_fnum = lines[2][:-1].split(' ')
     m_x, m_y = lines[4][:-1].split(' '), lines[5][:-1].split(' ')
@@ -123,9 +138,9 @@ def autosearch(z_corners: List[int], angle: int, chip_dims:List[int], num_top_ma
     x_s, y_s = x_s[idxs], y_s[idxs]
 
     # Ensure Optimal Camera Focus
-    temp = test_stage.focus_motor.get_pos()
-    incremental_check(test_stage.focus_motor, 0, 10, 1000, backpedal = True, auto_direction=True, slope_threshold=-2**(-8)) # Realign focus at the start
-    test_stage.focus_motor.position = temp
+    temp = stage.focus_motor.get_pos()
+    incremental_check(stage.focus_motor, 0, 10, 1000, backpedal = True, auto_direction=True, slope_threshold=-2**(-8)) # Realign focus at the start
+    stage.focus_motor.position = temp
 
     # FLAKE REFINDING
     try:
@@ -145,14 +160,14 @@ def autosearch(z_corners: List[int], angle: int, chip_dims:List[int], num_top_ma
 
             if prev_frame is not None and prev_frame == f_num:
                 coord[2] = prev_pos + 200
-                test_stage.move_to(coord, wait=True)
+                stage.move_to(coord, wait=True)
             else:
                 coord[2] -= 20
-                test_stage.move_to(coord, wait=True)
+                stage.move_to(coord, wait=True)
             prev_frame = f_num
 
             time.sleep(0.5)
-            final_frame, prev_pos = incremental_check(test_stage.focus_motor, 0, 15, 1000, slope_threshold=-2**(-6))
+            final_frame, prev_pos = incremental_check(stage.focus_motor, 0, 15, 1000, slope_threshold=-2**(-6))
 
             if final_frame is not None:
                 cv2.imwrite(f'{photo_dir}/m_100/m100_{f_num}_{i}.jpg', final_frame)
@@ -165,15 +180,15 @@ def autosearch(z_corners: List[int], angle: int, chip_dims:List[int], num_top_ma
         pass
 
     lens.rotate_to_position(5)
-    test_stage.move_home()
+    stage.move_home()
 
     # Sort and organize 10x results for refinding
     sort_results(result_txt_m100)
 
-    return (result_txt, result_txt_m100)
+    return [result_txt, result_txt_m100]
 
 if __name__ == '__main__':
     z_corners = [-4290, -5920, -960]
     angle = 180
     chip_dims = [1.7, 0.91]
-    print(autosearch(z_corners=z_corners, angle=angle, chip_dims=chip_dims, num_top_matches=int(sys.argv[1])))
+    print(autosearch(z_corners=z_corners, angle=angle, chip_dims=chip_dims, num_top_matches=int(sys.argv[1]), is_main=True))
