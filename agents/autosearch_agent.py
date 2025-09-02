@@ -1,14 +1,16 @@
 import argparse
 import os
-
+from api_key import set_api_keys
 from tools import autosearch_tool, calibrate_corners_tool, chip_processing_tool
-os.environ['OPENAI_API_KEY'] = ''
 from smolagents import (
     CodeAgent,
     ToolCallingAgent,
     
     OpenAIServerModel,
 )
+
+set_api_keys()
+
 def parse_args():
     parser = argparse.ArgumentParser(description="2D Material Auto-Exfoliation System Control Program")
     parser.add_argument(
