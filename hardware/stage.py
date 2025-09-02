@@ -224,8 +224,8 @@ class Stage:
             for i in range(len(location)):
                 self.motors[i].wait_for_stop()
 
-    def move_home(self):
-        self.move_to(self.home_location)
+    def move_home(self, wait=False):
+        self.move_to(self.home_location, wait=wait)
 
     def jog_in_direction(self, bearing, quick_stop=True):
         '''

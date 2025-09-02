@@ -42,11 +42,15 @@ def autosearch_tool(z_corners: List[int], angle: int, chip_dims: List[int], num_
     return autosearch(z_corners, angle, chip_dims, num_top_matches)
 
 @tool
-def chip_processing_tool() -> List[str]:
+def chip_processing_tool(num_top_matches: int = 25) -> List[str]:
     '''
     Runs both steps of chip scanning in one function:
         1. Calibrating corners
         2. Autosearching
+
+    Args:
+        num_top_matches: Number of largest flakes to image at 100x (default: 25)
+    
     Returns:
         result_paths: Paths to the results of the snake scan and the 100x flake verification steps
             respectively, structured [result_txt, result_txt_m100].
@@ -72,7 +76,7 @@ def chip_processing_tool() -> List[str]:
     obs2 = subprocess.Popen(['python', '../hardware/observer.py', '100', f'{photo_dir}/m_100', f'{result_dir}/m_100', results_m100])
     print('Both processes running')
 
-    result = autosearch(z_corners, angle, chip_dims, num_top_matches = 25, stage = stage, lens = lens, photo_dir=photo_dir)
+    result = autosearch(z_corners, angle, chip_dims, num_top_matches = num_top_matches, stage = stage, lens = lens, photo_dir=photo_dir)
 
     obs1.terminate()
     obs2.terminate()

@@ -180,7 +180,7 @@ def autosearch(z_corners: List[int], angle: int, chip_dims:List[float], num_top_
         pass
 
     lens.rotate_to_position(5)
-    stage.move_home()
+    stage.move_home(wait=True)
 
     # Sort and organize 10x results for refinding
     sort_results(result_txt_m100)
