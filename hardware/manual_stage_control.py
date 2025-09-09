@@ -19,7 +19,7 @@ except:
 try:
     print('Starting Manual Motor Control')
     print('Press q to end Manual Motor Control')
-    if test_stage.start_manual_control('q', focus_comport='COM5', turret_comport='COM7'):
+    if test_stage.start_manual_control('q', focus_comport='COM5', turret_comport='COM7', wasd=True):
         print('Ended manual control mode.')
 
 except KeyboardInterrupt:

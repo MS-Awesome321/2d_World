@@ -3,6 +3,8 @@ import numpy as np
 import time
 from tqdm import tqdm
 from focus import Focus
+from focus import Focus
+from turret import Turret
 
 class Stage:
     """
@@ -198,16 +200,22 @@ class Stage:
             for method in methods:
                 method()
 
-    # Get Motor Positions
     def get_pos(self):
+        """
+        Get Motor Positions
+        """
+
         pos = []
         for motor in self.motors:
             pos.append(motor.get_position())
 
         return pos
 
-    # Stop Motor Motion
     def stop(self):
+        """
+        Stop Motor Motion
+        """
+        
         for motor in self.motors:
             motor.stop(sync=False)
         
@@ -217,6 +225,14 @@ class Stage:
         return True
     
     def move_to(self, location, wait=False):
+        """
+        Moves to given location. If len(location) == 2, then will move
+        x and y motors to given coordinate. If len(location) == 2, then 
+        will move x, y, and z motors to given coordinate. 
+
+        Wait will pause execution until motion is complete.
+        """
+        
         for i in range(len(location)):
             self.motors[i].move_to(location[i])
 
@@ -225,11 +241,17 @@ class Stage:
                 self.motors[i].wait_for_stop()
 
     def move_home(self, wait=False):
+        """
+        Moves the stage back to home location set by set_home()
+        """
+        
         self.move_to(self.home_location, wait=wait)
 
     def jog_in_direction(self, bearing, quick_stop=True):
         '''
-        Jogs stage in direction of bearing (measured in degrees counterclockwise from x-axis)
+        Jogs stage in direction of bearing (measured in degrees counterclockwise 
+        from x-axis). If quick_stop is True, the jog will automatically stop 
+        after 1 second.
         '''
 
         bearing = np.deg2rad(bearing)
@@ -259,11 +281,21 @@ class Stage:
             self.x_motor.stop(sync=False)
             self.y_motor.stop(sync=False)
     
-    # Manually Control Motors
-    def start_manual_control(self, stop='esc', focus_comport=None, turret_comport=None):
+    def start_manual_control(self, stop: str='esc', focus_comport: str=None, turret_comport: str=None, wasd: bool=False) -> bool:
+        """
+        Manually control microscope stage, focus motors, and turret.
+
+        Args:
+            stop: Key to press to stop manual mode
+            focus_comport: COM port to access the focus motor
+            turret_comport: COM port to access the lens turret motor
+            wasd: If true, uses wasd control rather than arrow keys
+
+        Returns:
+            complete: True once manual control terminates properly
+        """
+        
         import keyboard
-        from focus import Focus
-        from turret import Turret
 
         if focus_comport:
             focus = Focus(focus_comport)
@@ -276,30 +308,35 @@ class Stage:
 
         prev_pos = self.get_pos()
 
+        if wasd:
+            up, down, left, right = 'w', 's', 'a', 'd'
+        else:
+            up, down, left, right = 'up', 'down', 'left', 'right'
+
         while True:
             key = keyboard.read_event()
             if key.name == stop:
                 break
 
-            if key.name == 'up':
+            if key.name == up:
                 if key.event_type == 'up':
                     self.y_motor.stop(sync=False)
                 else:
                     self.y_motor.jog('-', kind='builtin')
             
-            elif key.name == 'down':
+            elif key.name == down:
                 if key.event_type == 'up':
                     self.y_motor.stop(immediate=True, sync=False)
                 else:
                     self.y_motor.jog('+', kind='builtin')
 
-            elif key.name == 'left':
+            elif key.name == left:
                 if key.event_type == 'up':
                     self.x_motor.stop(immediate=True, sync=False)
                 else:
                     self.x_motor.jog('-', kind='builtin')
             
-            elif key.name == 'right':
+            elif key.name == right:
                 if key.event_type == 'up':
                     self.x_motor.stop(sync=False)
                 else:
