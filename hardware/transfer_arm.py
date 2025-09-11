@@ -8,36 +8,41 @@ class TransferArm():
     Control transfer arm x, y, and z motors
     """
     
-    def __init__(self, serial_num_x, serial_num_y, serial_num_z):
+    def __init__(self, serial_num_x, serial_num_y, serial_num_z = None, x_step_size=100_000, x_speed=10_000_000, x_accl=70_000_000, y_step_size=2_000, y_speed=5_000_000, y_accl=70_000_000, z_step_size=2_000, z_speed=5_000_000, z_accl=70_000_000):
         self.motors = []
-        self.default_speeds= []
         try:
             self.x_motor = Thorlabs.KinesisMotor(serial_num_x, scale=True)
             self.motors.append(self.x_motor)
-            self.default_speeds.append(self.x_motor.get_jog_parameters().max_velocity // 4)
+            self.x_motor.setup_jog(step_size=x_step_size, max_velocity=x_speed, acceleration=x_accl)
+            self.x_motor.setup_velocity(max_velocity=x_speed, acceleration=x_accl)
         except:
             print("Could not mount X motor.")
 
         try:
             self.y_motor = Thorlabs.KinesisMotor(serial_num_y, scale=True)
             self.motors.append(self.y_motor)
-            self.default_speeds.append(self.y_motor.get_jog_parameters().max_velocity // 4)
+            self.y_motor.setup_jog(step_size=y_step_size, max_velocity=y_speed, acceleration=y_accl)
+            self.y_motor.setup_velocity(max_velocity=y_speed, acceleration=y_accl)
         except:
             print('Could not mount Y motor')
-        
+    
         try:
-            self.z_motor = Thorlabs.KinesisMotor(serial_num_z, scale=True)
-            self.motors.append(self.z_motor)
-            self.default_speeds.append(self.z_motor.get_jog_parameters().max_velocity // 4)
+            if serial_num_z is not None:
+                self.z_motor = Thorlabs.KinesisMotor(serial_num_z, scale=True)
+                self.motors.append(self.z_motor)
+                self.z_motor.setup_jog(step_size=z_step_size, max_velocity=z_speed, acceleration=z_accl)
+                self.z_motor.setup_velocity(max_velocity=z_speed, acceleration=z_accl)
         except:
             print('Could not mount Z motor')
 
-        x_params = self.x_motor.get_jog_parameters()
-        y_params = self.y_motor.get_jog_parameters()
-        z_params = self.z_motor.get_jog_parameters()
-        self.x_speed, self.x_accl = x_params.max_velocity, x_params.acceleration
-        self.y_speed, self.y_accl = y_params.max_velocity, y_params.acceleration
-        self.z_speed, self.z_accl = z_params.max_velocity, z_params.acceleration
+        self.x_motor_step, self.x_speed, self.x_accl = x_step_size, x_speed, x_accl
+        self.y_motor_step, self.y_speed, self.y_accl = y_step_size, y_speed, y_accl
+        self.z_motor_step, self.z_speed, self.z_accl = z_step_size, z_speed, z_accl
+
+        self.x_speed_step = x_speed // 10
+        self.y_speed_step = y_speed // 10
+        self.z_speed_step = z_speed // 10
+
 
     def set_home(self, coords=None):
         """
@@ -57,24 +62,6 @@ class TransferArm():
             self.home_location = np.asarray(coords, dtype=float)
         else:
             raise TypeError("`coords` must be None or an iterable of length 3")
-        
-    def change_speed(self, motor, up_down):
-        """
-        Sets speed of motor (0, 1, 2); up_down should be either '+' or '-'
-        """
-
-        current_speed = self.motors[motor].get_jog_parameters().max_velocity
-        speed_change = self.default_speeds[motor]
-
-        if up_down=='+':
-            new_speed = current_speed + speed_change
-        elif up_down=='-':
-            new_speed = current_speed - speed_change
-        else:
-            raise ValueError('Invalid parameter passed for up_down')
-        
-        self.motors[motor].setup_jog(max_velocity=new_speed)
-        return True
     
     def get_pos(self):
         """
@@ -240,18 +227,19 @@ class TransferArm():
             elif key.name == '[':
                 x_speed = self.x_motor.get_jog_parameters().max_velocity
                 y_speed = self.y_motor.get_jog_parameters().max_velocity
-                self.x_motor.setup_jog(max_velocity=(x_speed + 1_000))
-                self.y_motor.setup_jog(max_velocity=(y_speed + 1_000))
+                self.x_motor.setup_jog(max_velocity=(x_speed + self.x_speed_step))
+                self.y_motor.setup_jog(max_velocity=(y_speed + self.y_speed_step))
                 print(self.x_motor.get_jog_parameters().max_velocity, self.y_motor.get_jog_parameters().max_velocity)
             elif key.name == ']':
                 x_speed = self.x_motor.get_jog_parameters().max_velocity
                 y_speed = self.y_motor.get_jog_parameters().max_velocity
-                if x_speed > 1_000 and y_speed > 1_000:
-                    self.x_motor.setup_jog(max_velocity=(x_speed - 1_000))
-                    self.y_motor.setup_jog(max_velocity=(y_speed - 1_000))
+                if x_speed > self.x_speed_step and y_speed > self.y_speed_step:
+                    self.x_motor.setup_jog(max_velocity=(x_speed - self.y_speed_step))
+                    self.y_motor.setup_jog(max_velocity=(y_speed - self.y_speed_step))
                 print(self.x_motor.get_jog_parameters().max_velocity, self.y_motor.get_jog_parameters().max_velocity)
         
         return True
+    
 
 if __name__ == '__main__':
     import sys
@@ -277,10 +265,7 @@ if __name__ == '__main__':
     # time.sleep(4)
     # print(x_motor.get_position())
 
-    arm = TransferArm(x, y, z)
-    arm.x_motor.setup_jog(step_size=100_000, max_velocity=10_000_000, acceleration=70_000_000)
-    arm.y_motor.setup_jog(max_velocity=10_000_000, acceleration=70_000_000)
-    arm.z_motor.setup_jog(step_size=100, max_velocity=10_000_000, acceleration=70_000_000)
+    arm = TransferArm(x, y, z, z_speed=10_000)
 
     # try:
     #     x = float(sys.argv[1])
@@ -301,6 +286,6 @@ if __name__ == '__main__':
     #     print('Stopped Motion.')
     #arm = TransferArm(x, y, z)
     x_now, y_now, z_now = arm.get_pos()
-    z_target = z_now - 500_000
+    z_target = z_now + 500_000
     arm.move_to([x_now, y_now, z_target], wait=True)
     print("Transfer arm moved to new position:", arm.get_pos())
