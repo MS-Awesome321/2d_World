@@ -280,22 +280,28 @@ if __name__ == '__main__':
     arm = TransferArm(x, y, z)
     arm.x_motor.setup_jog(step_size=100_000, max_velocity=10_000_000, acceleration=70_000_000)
     arm.y_motor.setup_jog(max_velocity=10_000_000, acceleration=70_000_000)
+    arm.z_motor.setup_jog(step_size=100, max_velocity=10_000_000, acceleration=70_000_000)
+
+    # try:
+    #     x = float(sys.argv[1])
+    #     y = float(sys.argv[2])
+    #     y = float(sys.argv[3])
+    #     arm.move_to([x, y, z])
+    # except:
+    #     pass
+
+    # try:
+    #     print('Starting Manual Tranfer Arm Control')
+    #     print('Press q to end Manual Transfer Arm Control')
+    #     if arm.start_manual_control('q', focus_comport='COM5', turret_comport='COM7', wasd=False):
+    #         print('Ended manual control mode.')
+
+    # except KeyboardInterrupt:
+    #     arm.stop()
+    #     print('Stopped Motion.')
+    #arm = TransferArm(x, y, z)
     arm.z_motor.setup_jog(max_velocity=10_000_000, acceleration=70_000_000)
-
-    try:
-        x = float(sys.argv[1])
-        y = float(sys.argv[2])
-        y = float(sys.argv[3])
-        arm.move_to([x, y, z])
-    except:
-        pass
-
-    try:
-        print('Starting Manual Tranfer Arm Control')
-        print('Press q to end Manual Transfer Arm Control')
-        if arm.start_manual_control('q', focus_comport='COM5', turret_comport='COM7', wasd=False):
-            print('Ended manual control mode.')
-
-    except KeyboardInterrupt:
-        arm.stop()
-        print('Stopped Motion.')
+    x_now, y_now, z_now = arm.get_pos()
+    z_target = z_now - 500_000
+    arm.move_to([x_now, y_now, z_target], wait=True)
+    print("Transfer arm moved to new position:", arm.get_pos())
