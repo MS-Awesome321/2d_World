@@ -300,7 +300,6 @@ if __name__ == '__main__':
     #     arm.stop()
     #     print('Stopped Motion.')
     #arm = TransferArm(x, y, z)
-    arm.z_motor.setup_jog(max_velocity=10_000_000, acceleration=70_000_000)
     x_now, y_now, z_now = arm.get_pos()
     z_target = z_now - 500_000
     arm.move_to([x_now, y_now, z_target], wait=True)
