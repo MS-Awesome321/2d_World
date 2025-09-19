@@ -17,6 +17,7 @@ class Segmenter():
         self.bg_percentile = bg_percentile
         self.l_mean = l_mean
         self.focus_disks = focus_disks
+        self.mag = magnification
         
         self.lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB).astype(np.int16)
         self.lab[:,:,0] = self.lab[:,:,0] * 100.0/255.0
@@ -330,3 +331,31 @@ class Segmenter():
 
         self.direct_lab_pretty = prettified_img
         return prettified_img
+    
+    def find_match(self, template_flake, template_mag=None, error_bound = 0.1):
+        if template_mag is None:
+            template_mag = self.mag
+
+        target_area = np.sum(template_flake)
+        target_area *= (self.mag/template_mag)**2
+        error_bound *= target_area
+        similar_area_masks = self.mask_ids[self.mask_areas >= target_area - error_bound and self.mask_areas <= target_area + error_bound]
+
+        min_diff = 1
+        result = None
+        for i in similar_area_masks:
+            mask = np.zeros_like(self.masks)
+            mask[self.masks == i] = 1
+            diff = flake_match (mask, template_flake)
+
+            if diff < min_diff:
+                min_diff = diff
+                result = mask
+
+        return result
+
+
+def flake_match(flake1: np.ndarray, flake2: np.ndarray) -> float:
+    contour1, _ = cv2.findContours(flake1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contour2, _ = cv2.findContours(flake2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    return cv2.matchShapes(contour1[0], contour2[0], cv2.CONTOURS_MATCH_I1, 0) # Hu Moments
