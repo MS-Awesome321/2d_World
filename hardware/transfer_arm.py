@@ -156,7 +156,7 @@ class TransferArm():
             complete: True once manual control terminates properly
         """
         
-        import keyboard
+        import keyboard # type: ignore
 
         prev_pos = self.get_pos()
 
