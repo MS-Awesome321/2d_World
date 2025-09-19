@@ -9,6 +9,7 @@ hardware_dir = os.path.join(os.path.dirname(current_dir), 'hardware')
 sys.path.append(hardware_dir)
 from go import autosearch
 from corner import calibrate_corners
+from transfer_arm import TransferArm
 import subprocess
 
 @tool
@@ -84,3 +85,28 @@ def chip_processing_tool(num_top_matches: int = 25) -> List[str]:
     return result
 
 
+@tool
+def approach_flake_tool(up_or_down: str = '+') -> bool:
+    '''
+    Makes the transfer arm go up or down.
+
+    Args:
+        up_or_down: If '+', the arm will go up. If '-', the arm will go down.
+
+    Returns:
+        finished: True if process completed properly
+    '''
+    
+    x = '26002181'
+    y = '26001655'
+    z = '26001674'
+
+    arm = TransferArm(x, y, z, z_speed=10_000, y_speed=10_000_000)
+    x_now, y_now, z_now = arm.get_pos()
+    if up_or_down == '+':
+        z_target = z_now + 500_000
+    elif up_or_down == '-':
+        z_target = z_now - 500_000
+    arm.move_to([x_now, y_now, z_target], wait=True)
+    print("Transfer arm moved to new position:", arm.get_pos())
+    return True

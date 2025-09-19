@@ -1,4 +1,5 @@
 *.mp4
+*.png
 hardware/.DS_Store
 .DS_Store
 hardware/photo_dir/

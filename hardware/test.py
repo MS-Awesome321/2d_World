@@ -118,10 +118,45 @@ from PIL import Image
 #     time.sleep(1.5)
 
 
-x = '27503936'
-y = '27503951'
+# x = '27503936'
+# y = '27503951'
 
-stage = Stage(x, y, focus_comport='COM5', magnification=10)
-stage.x_motor.setup_jog(max_velocity=100_000, acceleration=1_000_000)
-stage.y_motor.setup_jog(max_velocity=100_000, acceleration=1_000_000)
-stage.jog_in_direction(int(sys.argv[1]))
+# stage = Stage(x, y, focus_comport='COM5', magnification=10)
+# stage.x_motor.setup_jog(max_velocity=100_000, acceleration=1_000_000)
+# stage.y_motor.setup_jog(max_velocity=100_000, acceleration=1_000_000)
+# stage.jog_in_direction(int(sys.argv[1]))
+
+
+from PIL import ImageGrab
+from homography import extract_features, identify_corner_with_ransac
+
+# Initialize the ORB feature detector and BFMatcher.
+orb = cv2.ORB_create(nfeatures=1000)
+bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
+
+current_img = np.array(ImageGrab.grab(bbox=(432,137,1782,892)))[:,:,::-1]
+og_corner_img = cv2.imread("corner1.png")[:,:,::-1]
+shape = np.array(og_corner_img.shape[:2][::-1])
+
+known_labels = [0]
+known_corner_features = extract_features([og_corner_img], orb)
+label, inliers, features, matches, H = identify_corner_with_ransac(current_img, known_corner_features, known_labels, orb, bf)
+
+print(H) # Does not get fooled!
+
+fig, axs = plt.subplots(2, 1)
+
+def apply_H(point, H):
+    point.append(1)
+    result = H@point
+    return result[:2] / result[2]
+
+p1 = apply_H([714, 525], H)
+p2 = apply_H([771, 488], H)
+
+axs[0].imshow(current_img[:,:,::-1] )
+axs[0].plot([p1[0], p2[0]], [p1[1], p2[1]])
+
+axs[1].imshow(cv2.warpPerspective(og_corner_img, H, shape))
+axs[1].plot([p1[0], p2[0]], [p1[1], p2[1]])
+plt.show()

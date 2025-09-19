@@ -8,7 +8,7 @@ class TransferArm():
     Control transfer arm x, y, and z motors
     """
     
-    def __init__(self, serial_num_x, serial_num_y, serial_num_z = None, x_step_size=100_000, x_speed=10_000_000, x_accl=70_000_000, y_step_size=2_000, y_speed=5_000_000, y_accl=70_000_000, z_step_size=2_000, z_speed=5_000_000, z_accl=70_000_000):
+    def __init__(self, serial_num_x, serial_num_y, serial_num_z = None, x_step_size=500_000, x_speed=500_000, x_accl=70_000_000, y_step_size=500_000, y_speed=500_000, y_accl=70_000_000, z_step_size=5_000, z_speed=5_000, z_accl=70_000_000):
         self.motors = []
         try:
             self.x_motor = Thorlabs.KinesisMotor(serial_num_x, scale=True)
@@ -265,12 +265,12 @@ if __name__ == '__main__':
     # time.sleep(4)
     # print(x_motor.get_position())
 
-    arm = TransferArm(x, y, z, z_speed=10_000)
+    arm = TransferArm(x, y, z, x_speed= 500_000, y_speed= 500_000, z_speed = 5_000)
 
     # try:
     #     x = float(sys.argv[1])
     #     y = float(sys.argv[2])
-    #     y = float(sys.argv[3])
+    #     z = float(sys.argv[3])
     #     arm.move_to([x, y, z])
     # except:
     #     pass
@@ -284,6 +284,8 @@ if __name__ == '__main__':
     # except KeyboardInterrupt:
     #     arm.stop()
     #     print('Stopped Motion.')
+
+
     #arm = TransferArm(x, y, z)
     x_now, y_now, z_now = arm.get_pos()
     z_target = z_now + 500_000
