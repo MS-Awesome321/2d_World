@@ -294,17 +294,13 @@ if __name__ == '__main__':
     shape = np.array(img_og.shape[:2][::-1])
     
     # Rotate and translate image
-    R = cv2.getRotationMatrix2D(0.5 * shape, 45, 1)
-    img_rotated = cv2.warpAffine(img_og, R, shape)
+    R = cv2.getRotationMatrix2D(0.5 * shape, 34, 1)
 
     tx = 100
     ty = 50 
     T = np.float32([[1, 0, tx], [0, 1, ty]])
-    img_translated = cv2.warpAffine(img_rotated, T, shape)
-
-    cv2.imshow("Image", img_og)
-    cv2.imshow("Image Rotated", img_rotated)
-    cv2.imshow("Image Translated", img_translated)
+    img_translated = cv2.warpAffine(img_og, T, shape)
+    img_rotated = cv2.warpAffine(img_translated, R, shape)
 
     # Initialize the ORB feature detector and BFMatcher.
     orb = cv2.ORB_create(nfeatures=1000)
@@ -317,10 +313,32 @@ if __name__ == '__main__':
 
     known_labels = [0,1,2,3]
     known_corner_features = extract_features(varied_imgs, orb)
-    label, inliers, features, matches, H = identify_corner_with_ransac(img_translated, known_corner_features, known_labels, orb, bf)
+    label, inliers, features, matches, H = identify_corner_with_ransac(img_rotated, known_corner_features, known_labels, orb, bf)
 
     print(H) # Does not get fooled!
 
     result = cv2.warpPerspective(varied_imgs[label], H, shape)
+
+    a, b, tx = H[0, 0], H[0, 1], H[0, 2]
+    c, d, ty = H[1, 0], H[1, 1], H[1, 2]
+    theta = np.arctan2(b, a)
+    translation = (tx, ty)
+
+    hyp = np.sqrt(np.pow(a, 2) + np.pow(b, 2))
+    R_new = np.array([
+        [a, -b],
+        [b,  a]
+    ]) / hyp
+    print("Rotation (radians):", theta)
+    print("Translation (pixels):", translation)
+
+    point = (500, 500)
+    cv2.circle(img_og, point, 3, (255, 0, 0), -1)
+    cv2.imshow("Image", img_og)
+    cv2.imshow("Image Rotated", img_rotated)
+    cv2.imshow("Image Translated", img_translated)
+    cv2.circle(result, (int(tx), int(ty)), 3, (0, 255, 0), -1)
+    point_transformed = R_new@(np.add(point, np.negative(translation)))
+    cv2.circle(result, (int(point_transformed[0]), int(point_transformed[1])), 3, (255, 0, 0), -1)
     cv2.imshow("Result", result)
     cv2.waitKey(0)

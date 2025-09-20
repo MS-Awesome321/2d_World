@@ -57,7 +57,7 @@ def chip_processing_tool(num_top_matches: int = 25) -> List[str]:
             respectively, structured [result_txt, result_txt_m100].
     '''
 
-    z_corners, chip_dims, angle, stage, lens = calibrate_corners(False)
+    z_corners, chip_dims, angle, stage, lens = calibrate_corners()
 
     time.sleep(1)
 
@@ -70,8 +70,8 @@ def chip_processing_tool(num_top_matches: int = 25) -> List[str]:
     os.mkdir(result_dir)
     os.mkdir(f'{result_dir}/m_100')
 
-    result_txt =  f'{current_dir}/results.txt'
-    results_m100 = f'{current_dir}/results100.txt'
+    result_txt =  f'{current_dir}/results_{chip_dims[0]}_{chip_dims[1]}.txt'
+    results_m100 = f'{current_dir}/results100_{chip_dims[0]}_{chip_dims[1]}.txt'
 
     obs1 = subprocess.Popen(['python', '../hardware/observer.py', '10', photo_dir, result_dir, result_txt])
     obs2 = subprocess.Popen(['python', '../hardware/observer.py', '100', f'{photo_dir}/m_100', f'{result_dir}/m_100', results_m100])

@@ -12,7 +12,7 @@ sys.path.append('C:/Users/admin/Desktop/2d_World/')
 from utils import Stopwatch
 from typing import List, Any
 
-def calibrate_corners(is_main: bool = False) -> List[Any]:
+def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> List[Any]:
     '''
     Traces edges of a silicon chip placed under the microscope to find the corners
     and calibrates the micrscope focus at 10x for each corner. 
@@ -27,6 +27,9 @@ def calibrate_corners(is_main: bool = False) -> List[Any]:
     Arguments:
         is_main: True only if the main method of corner.py is run. If True, displays cv2 window
             with internal computations that are done in calibrate_corners.
+
+        ret_corner_imgs: If true, returns the images of the 4 corners of the chip. Used for 
+            corner matching during flake refinding in the transfer process.
 
     Returns:
         Result (tuple):
@@ -232,20 +235,22 @@ def calibrate_corners(is_main: bool = False) -> List[Any]:
 
     z_corners = []
     corners = []
+    corner_imgs = []
     for i in acute_indices_cw:
         corner = [hull_pts[i, 0], hull_pts[i, 1]]
         lens.rotate_to_position(1)
 
         stage.move_to(corner, wait=True)
         time.sleep(0.25)
-        frame, max_pos = incremental_check(stage.focus_motor, 0, 200, 6000, slope_threshold=-2**(-9), verbose=False, auto_direction=True)
+        frame_5x, max_pos = incremental_check(stage.focus_motor, 0, 200, 6000, slope_threshold=-2**(-9), verbose=False, auto_direction=True)
 
         lens.rotate_to_position(5)
         time.sleep(1)
-        frame, max_pos = incremental_check(stage.focus_motor, 0, 50, 2000, slope_threshold=-2**(-8), verbose=False, auto_direction=True)
+        frame_10x, max_pos = incremental_check(stage.focus_motor, 0, 50, 2000, slope_threshold=-2**(-8), verbose=False, auto_direction=True)
 
         z_corners.append(max_pos)
         corners.append(corner)
+        corner_imgs.append(frame_10x)
 
     #  Move to starting point and calculate values
     z0 = z_corners[0]
@@ -272,7 +277,10 @@ def calibrate_corners(is_main: bool = False) -> List[Any]:
     if is_main:
         watch.clock()
 
-    return [z_corners[1:], [length/610_000, width/610_000], angle, stage, lens]
+    if ret_corner_imgs:
+        return [z_corners[1:], [length/610_000, width/610_000], angle, stage, lens, corner_imgs, corners]
+    else:
+        return [z_corners[1:], [length/610_000, width/610_000], angle, stage, lens]
 
 if __name__ == '__main__':
     print(calibrate_corners(True))

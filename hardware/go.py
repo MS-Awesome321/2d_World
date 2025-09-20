@@ -48,8 +48,8 @@ def autosearch(z_corners: List[int], angle: int, chip_dims:List[float], num_top_
     # Set up Motors
     grow = 2
     max_area = 5000
-    result_txt = 'results.txt'
-    result_txt_m100 = 'results100.txt'
+    result_txt = f'results_{chip_dims[0]}_{chip_dims[1]}.txt'
+    result_txt_m100 = f'results100_{chip_dims[0]}_{chip_dims[1]}.txt'
 
     if stage is None:
         x = '27503936'
@@ -80,7 +80,7 @@ def autosearch(z_corners: List[int], angle: int, chip_dims:List[float], num_top_
 
         # Perform Autosearch
         wf = WF(photo_dir, take_pic=True)
-        clear_results('results.txt')
+        clear_results(result_txt)
         print(z_corners)
         stage.start_snake(z_corners=z_corners, wf = wf.wait_focus_and_click)
 
