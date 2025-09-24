@@ -53,18 +53,15 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
         theta = np.arctan2((y0 - y1), (x1 - x0)) # trust, the inconsistency makes it work
         theta = float(np.rad2deg(theta))
 
-        if theta >= 0:
-            return theta
-        else:
-            return theta + 360
+        return theta
         
     try:
         x = '27503936'
         y = '27503951'
 
         stage = Stage(x, y, focus_comport='COM5', magnification=10)
-        stage.x_speed = 105_000
-        stage.y_speed = 105_000
+        stage.x_speed = 80_000
+        stage.y_speed = 80_000
         stage.x_accl = 700_000
         stage.y_accl = 700_000
         prev_direction = 0
@@ -77,6 +74,9 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
         lens.rotate_to_position(1)
 
         points = []
+
+        counter = 0
+        limit = 0
 
         while len(points) < 190:
             angles = []
@@ -101,7 +101,7 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
                         max_contour = contour
 
                 perimeter = cv2.arcLength(max_contour, True)
-                corners = cv2.approxPolyDP(max_contour, 0.02 * perimeter, True)
+                corners = cv2.approxPolyDP(max_contour, 0.03 * perimeter, True)
 
                 if corners is not None:
                     # Determine corners outside of padding
@@ -142,13 +142,14 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
                     break
 
             # Decide next motion
-            if len(corners) < 5:
+            temp = prev_direction
+            if len(corners) > 0 and len(corners) < 5:
                 if len(angles) == 1:
                     stage.jog_in_direction(angles[0], quick_stop=False)
                     prev_direction = angles[0]
-                else:
+                elif counter > limit:
                     max_dif = 0
-                    max_angle = 0
+                    max_angle = prev_direction
                     for a in angles:
                         dif = abs(prev_direction - a)
                         if dif > max_dif:
@@ -156,18 +157,22 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
                             max_angle = a
                     stage.jog_in_direction(max_angle, quick_stop=False)
                     prev_direction = max_angle
+                    limit = counter + 15
             else:
                 stage.jog_in_direction(prev_direction, quick_stop=False)
 
             if len(corners) < 5:
-                stage.jog_in_direction(prev_direction + 60, quick_stop=False)
-                time.sleep(0.5)
-                for i in range(2):
+                stage.jog_in_direction(prev_direction + 90, quick_stop=False)
+                time.sleep(0.6)
+                for i in range(3):
                     if len(points) > 0:
                         points.pop()
                 stage.jog_in_direction(prev_direction, quick_stop=False)
             points.append(stage.get_pos()[:2])
 
+            if is_main:
+                print(temp, prev_direction, angles, counter, limit)
+            counter+=1
 
     except KeyboardInterrupt:
         pass
@@ -250,7 +255,7 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
 
         z_corners.append(max_pos)
         corners.append(corner)
-        corner_imgs.append(frame_10x)
+        corner_imgs.append(frame_5x)
 
     #  Move to starting point and calculate values
     z0 = z_corners[0]

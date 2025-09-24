@@ -115,6 +115,8 @@ def incremental_check(focus_motor, start, step, max, window_size=5, shrink=2, bb
             focus_motor.rotate_relative(s)
             time.sleep(0.006 * abs(step)) # slowed because of how much slip this motor has
 
+    if max_pos is None:
+        max_pos = focus_motor.get_position()
     return max_frame, max_pos
 
 def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2, direction = 1, change_factor = 1, shrink=2, bbox=(432,137,1782,892)):

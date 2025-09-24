@@ -262,16 +262,16 @@ class Stage:
         self.x_motor.setup_jog(max_velocity=self.x_speed * abs(x_factor), acceleration=self.x_accl, mode='continuous')
         self.y_motor.setup_jog(max_velocity=self.y_speed * abs(y_factor), acceleration=self.y_accl, mode='continuous')
 
-        if x_factor >= 0.01:
+        if x_factor >= 0.001:
             self.x_motor.jog('+', kind='builtin')
-        elif x_factor <= -0.01:
+        elif x_factor <= -0.001:
             self.x_motor.jog('-', kind='builtin')
         else:
             self.x_motor.stop(immediate=True, sync=False)
 
-        if y_factor >= 0.01:
+        if y_factor >= 0.001:
             self.y_motor.jog('-', kind='builtin')
-        elif y_factor <= -0.01:
+        elif y_factor <= -0.001:
             self.y_motor.jog('+', kind='builtin')
         else:
             self.y_motor.stop(immediate=True, sync=False)
