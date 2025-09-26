@@ -45,7 +45,7 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
     
     shrink = 4
     radius = 6
-    pad = 12
+    pad = 10
 
     def get_angle(pt0, pt1):
         x0, y0 = pt0
@@ -54,6 +54,10 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
         theta = float(np.rad2deg(theta))
 
         return theta
+        # if theta > 0:
+        #     return theta
+        # else:
+        #     return theta + 360
         
     try:
         x = '27503936'
@@ -65,6 +69,7 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
         stage.x_accl = 700_000
         stage.y_accl = 700_000
         prev_direction = 0
+        prev_popped_point = 0
 
         if is_main:
             watch = Stopwatch()
@@ -75,8 +80,15 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
 
         points = []
 
-        counter = 0
-        limit = 0
+        def make_gray(img):
+            r = img[:,:,0]
+            g = img[:,:,1]
+            b = img[:,:,2]
+            result = r + b - g
+            result[result > 255] = 255
+            result[result < 0] = 0
+            return 255 - result
+
 
         while len(points) < 190:
             angles = []
@@ -86,8 +98,7 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
             frame = frame[110:-110, 340:-300, :]
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame = cv2.resize(frame, (int(frame.shape[1]/shrink), int(frame.shape[0]/shrink)), cv2.INTER_NEAREST)
-            # gray =  cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            gray = cv2.blur(frame[:,:,0], (10,10))
+            gray = cv2.blur(make_gray(frame), (10,10))
             ret, thresh_image = cv2.threshold(gray, 155, 255, cv2.THRESH_OTSU)
             contours, hierarchy = cv2.findContours(thresh_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -101,7 +112,9 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
                         max_contour = contour
 
                 perimeter = cv2.arcLength(max_contour, True)
-                corners = cv2.approxPolyDP(max_contour, 0.03 * perimeter, True)
+                corners = cv2.approxPolyDP(max_contour, 0.06 * perimeter, True)
+
+                frame_area = frame.shape[0] * frame.shape[1]
 
                 if corners is not None:
                     # Determine corners outside of padding
@@ -119,7 +132,7 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
 
                     # Draw contours 
                     if is_main:
-                        if len(corners) < 5:
+                        if len(corners) < 5 and (max_area > 0.5 * frame_area and max_area < 0.85 * frame_area):
                             cv2.drawContours(frame, max_contour, -1, (0, 255, 0), 2)
                         else:
                             cv2.drawContours(frame, max_contour, -1, (0, 0, 255), 2)
@@ -143,36 +156,30 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
 
             # Decide next motion
             temp = prev_direction
-            if len(corners) > 0 and len(corners) < 5:
-                if len(angles) == 1:
-                    stage.jog_in_direction(angles[0], quick_stop=False)
-                    prev_direction = angles[0]
-                elif counter > limit:
-                    max_dif = 0
-                    max_angle = prev_direction
-                    for a in angles:
-                        dif = abs(prev_direction - a)
-                        if dif > max_dif:
-                            max_dif = dif
-                            max_angle = a
-                    stage.jog_in_direction(max_angle, quick_stop=False)
-                    prev_direction = max_angle
-                    limit = counter + 15
+            if len(angles) > 0 and len(angles) <= 4 and (max_area > 0.5 * frame_area and max_area < 0.85 * frame_area):
+                min_dif = 90
+                min_angle = angles[0]
+                target = prev_direction + 90
+                for a in angles:
+                    dif = abs(target - a)
+                    if dif < min_dif:
+                        min_dif = dif
+                        min_angle = a
+
+                if prev_direction != min_angle:
+                    stage.jog_in_direction(min_angle + 90, quick_stop=False)
+                    time.sleep(1.2)
+                    for i in range(6):
+                        if len(points) > prev_popped_point:
+                            points.pop()
+                    prev_popped_point = len(points)
+                stage.jog_in_direction(min_angle, quick_stop=False)
+
+                prev_direction = min_angle
             else:
                 stage.jog_in_direction(prev_direction, quick_stop=False)
 
-            if len(corners) < 5:
-                stage.jog_in_direction(prev_direction + 90, quick_stop=False)
-                time.sleep(0.6)
-                for i in range(3):
-                    if len(points) > 0:
-                        points.pop()
-                stage.jog_in_direction(prev_direction, quick_stop=False)
             points.append(stage.get_pos()[:2])
-
-            if is_main:
-                print(temp, prev_direction, angles, counter, limit)
-            counter+=1
 
     except KeyboardInterrupt:
         pass
