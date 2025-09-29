@@ -64,8 +64,8 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
         y = '27503951'
 
         stage = Stage(x, y, focus_comport='COM5', magnification=10)
-        stage.x_speed = 80_000
-        stage.y_speed = 80_000
+        stage.x_speed = 70_000
+        stage.y_speed = 70_000
         stage.x_accl = 700_000
         stage.y_accl = 700_000
         prev_direction = 0
@@ -85,7 +85,7 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
             g = img[:,:,1]
             b = img[:,:,2]
             result = r + b - g
-            result[result > 255] = 255
+            result[result > 200] = 255
             result[result < 0] = 0
             return 255 - result
 
@@ -112,7 +112,7 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
                         max_contour = contour
 
                 perimeter = cv2.arcLength(max_contour, True)
-                corners = cv2.approxPolyDP(max_contour, 0.06 * perimeter, True)
+                corners = cv2.approxPolyDP(max_contour, 0.05 * perimeter, True)
 
                 frame_area = frame.shape[0] * frame.shape[1]
 
@@ -132,7 +132,7 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
 
                     # Draw contours 
                     if is_main:
-                        if len(corners) < 5 and (max_area > 0.5 * frame_area and max_area < 0.85 * frame_area):
+                        if len(corners) < 5 and (max_area > 0.125 * frame_area and max_area < 0.6 * frame_area):
                             cv2.drawContours(frame, max_contour, -1, (0, 255, 0), 2)
                         else:
                             cv2.drawContours(frame, max_contour, -1, (0, 0, 255), 2)
@@ -151,12 +151,12 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
             # Show Frame
             if is_main:
                 cv2.imshow('Corner Calibration', frame)
-                if cv2.waitKey(25) & 0xFF == ord('q'):
+                if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
 
             # Decide next motion
             temp = prev_direction
-            if len(angles) > 0 and len(angles) <= 4 and (max_area > 0.5 * frame_area and max_area < 0.85 * frame_area):
+            if len(angles) > 0 and len(angles) <= 4 and (max_area > 0.125 * frame_area and max_area < 0.6 * frame_area):
                 min_dif = 90
                 min_angle = angles[0]
                 target = prev_direction + 90
@@ -168,8 +168,8 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
 
                 if prev_direction != min_angle:
                     stage.jog_in_direction(min_angle + 90, quick_stop=False)
-                    time.sleep(1.2)
-                    for i in range(6):
+                    time.sleep(1.25)
+                    for i in range(5):
                         if len(points) > prev_popped_point:
                             points.pop()
                     prev_popped_point = len(points)
@@ -254,7 +254,7 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
 
         stage.move_to(corner, wait=True)
         time.sleep(0.25)
-        frame_5x, max_pos = incremental_check(stage.focus_motor, 0, 200, 6000, slope_threshold=-2**(-9), verbose=False, auto_direction=True)
+        frame_5x, max_pos = incremental_check(stage.focus_motor, 0, -200, 6000, slope_threshold=-2**(-9), verbose=False, auto_direction=True)
 
         lens.rotate_to_position(5)
         time.sleep(1)
@@ -290,7 +290,7 @@ def calibrate_corners(is_main: bool = False, ret_corner_imgs: bool = False) -> L
         watch.clock()
 
     if ret_corner_imgs:
-        return [z_corners[1:], [length/610_000, width/610_000], angle, stage, lens, corner_imgs, corners]
+        return [z_corners, [length/610_000, width/610_000], angle, stage, lens, corner_imgs, corners]
     else:
         return [z_corners[1:], [length/610_000, width/610_000], angle, stage, lens]
 

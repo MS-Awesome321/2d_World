@@ -240,6 +240,24 @@ class Stage:
             for i in range(len(location)):
                 self.motors[i].wait_for_stop()
 
+    def move_by(self, location, wait=False):
+        """
+        Moves by a given number of motor steps. If len(location) == 2, 
+        then will move x and y motors to given coordinate. 
+        If len(location) == 2, then will move x, y, and z motors to 
+        given coordinate. 
+
+        Wait will pause execution until motion is complete.
+        """
+        
+        current = self.get_pos()[:len(location)]
+        for i in range(len(location)):
+            self.motors[i].move_to(current[i] + location[i])
+
+        if wait:
+            for i in range(len(location)):
+                self.motors[i].wait_for_stop()
+
     def move_home(self, wait=False):
         """
         Moves the stage back to home location set by set_home()

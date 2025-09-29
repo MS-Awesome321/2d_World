@@ -8,7 +8,7 @@ class TransferArm():
     Control transfer arm x, y, and z motors
     """
     
-    def __init__(self, serial_num_x, serial_num_y, serial_num_z = None, x_step_size=500_000, x_speed=500_000, x_accl=70_000_000, y_step_size=500_000, y_speed=500_000, y_accl=70_000_000, z_step_size=5_000, z_speed=5_000, z_accl=70_000_000):
+    def __init__(self, serial_num_x, serial_num_y, serial_num_z = None, x_step_size=500_000, x_speed=500_000, x_accl=70_000_000, y_step_size=500_000, y_speed=500_000, y_accl=70_000_000, z_step_size=5000_000, z_speed=5000_000, z_accl=70_000_000):
         self.motors = []
         try:
             self.x_motor = Thorlabs.KinesisMotor(serial_num_x, scale=True)
@@ -265,29 +265,29 @@ if __name__ == '__main__':
     # time.sleep(4)
     # print(x_motor.get_position())
 
-    arm = TransferArm(x, y, z, x_speed= 500_000, y_speed= 500_000, z_speed = 5_000)
+    arm = TransferArm(x, y, z, x_speed= 500_000, y_speed= 500_000, z_speed = 5000_000)
 
-    # try:
-    #     x = float(sys.argv[1])
-    #     y = float(sys.argv[2])
-    #     z = float(sys.argv[3])
-    #     arm.move_to([x, y, z])
-    # except:
-    #     pass
+    try:
+        x = float(sys.argv[1])
+        y = float(sys.argv[2])
+        z = float(sys.argv[3])
+        arm.move_to([x, y, z])
+    except:
+        pass
 
-    # try:
-    #     print('Starting Manual Tranfer Arm Control')
-    #     print('Press q to end Manual Transfer Arm Control')
-    #     if arm.start_manual_control('q', focus_comport='COM5', turret_comport='COM7', wasd=False):
-    #         print('Ended manual control mode.')
+    try:
+        print('Starting Manual Tranfer Arm Control')
+        print('Press q to end Manual Transfer Arm Control')
+        if arm.start_manual_control('q', focus_comport='COM5', turret_comport='COM7', wasd=False):
+            print('Ended manual control mode.')
 
-    # except KeyboardInterrupt:
-    #     arm.stop()
-    #     print('Stopped Motion.')
+    except KeyboardInterrupt:
+        arm.stop()
+        print('Stopped Motion.')
 
 
     #arm = TransferArm(x, y, z)
-    x_now, y_now, z_now = arm.get_pos()
-    z_target = z_now + 500_000
-    arm.move_to([x_now, y_now, z_target], wait=True)
-    print("Transfer arm moved to new position:", arm.get_pos())
+    # x_now, y_now, z_now = arm.get_pos()
+    # z_target = z_now + 500_000
+    # arm.move_to([x_now, y_now, z_target], wait=True)
+    # print("Transfer arm moved to new position:", arm.get_pos())
