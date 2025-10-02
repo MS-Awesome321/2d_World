@@ -184,13 +184,7 @@ def autofocus(auto_stop = False, focus=None, q_stop=False, timeup = 2, direction
 if __name__=='__main__':
     try:
         focus = Focus('COM5')
-        import sys
-        try:
-            r = float(sys.argv[1])
-        except:
-            r = 1
-        if autofocus(focus=focus, q_stop=True, change_factor=r):
-            print(focus.get_pos())
+        incremental_check(focus, 0, 10, 1000, backpedal = True, auto_direction=True, slope_threshold=-2**(-8))
     except KeyboardInterrupt:
         print("Exiting...")
         cv2.destroyAllWindows()
