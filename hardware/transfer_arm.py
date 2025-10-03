@@ -39,6 +39,10 @@ class TransferArm():
         self.y_motor_step, self.y_speed, self.y_accl = y_step_size, y_speed, y_accl
         self.z_motor_step, self.z_speed, self.z_accl = z_step_size, z_speed, z_accl
 
+        self.motor_steps = [self.x_motor_step, self.y_motor_step, self.z_motor_step]
+        self.speeds = [self.x_speed, self.y_speed, self.z_speed]
+        self.accls = [self.x_accl, self.y_accl, self.z_accl]
+
         self.x_speed_step = x_speed // 10
         self.y_speed_step = y_speed // 10
         self.z_speed_step = z_speed // 10
@@ -109,6 +113,28 @@ class TransferArm():
         """
         
         self.move_to(self.home_location, wait=wait)
+
+    def change_speed(self, speeds=None, motor_steps=None, accelerations=None):
+        """
+        Sets speeds and acceleration
+        """
+
+        if speeds is None:
+            speeds = self.speeds
+        if motor_steps is None:
+            motor_steps = self.speeds
+        if accelerations is None:
+            accelerations = self.accls
+
+        assert len(speeds) == len(accelerations) and len(speeds) == len(motor_steps), "speeds and accelerations should be the same length"
+
+        for i in range(len(speeds)):
+            self.speeds[i] = speeds[i]
+            self.motor_steps[i] = motor_steps[i]
+            self.accls[i] = accelerations[i]
+            self.motors[i].setup_jog(step_size=motor_steps[i], max_velocity=speeds[i], acceleration=accelerations[i])
+        
+        return True
 
     def jog_in_direction(self, bearing, quick_stop=True):
         '''

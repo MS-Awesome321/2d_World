@@ -68,6 +68,8 @@ class Stage:
         y_params = self.y_motor.get_jog_parameters()
         self.x_speed, self.x_accl = x_params.max_velocity, x_params.acceleration
         self.y_speed, self.y_accl = y_params.max_velocity, y_params.acceleration
+        self.speeds = [self.x_speed, self.y_speed]
+        self.accls = [self.x_accl, self.y_accl]
 
     def set_home(self, coords=None):
         """
@@ -105,22 +107,23 @@ class Stage:
         self.long_edge  = long_edge_mm  * 610_000
         self.short_edge = short_edge_mm * 610_000
 
-    def change_speed(self, motor, up_down):
+    def change_speed(self, speeds=None, accelerations=None):
         """
-        Sets speed of motor (0 or 1); up_down should be either '+' or '-'
+        Sets speeds and acceleration
         """
 
-        current_speed = self.motors[motor].get_jog_parameters().max_velocity
-        speed_change = self.default_speeds[motor]
+        if speeds is None:
+            speeds = self.speeds
+        if accelerations is None:
+            accelerations = self.accls
 
-        if up_down=='+':
-            new_speed = current_speed + speed_change
-        elif up_down=='-':
-            new_speed = current_speed - speed_change
-        else:
-            raise ValueError('Invalid parameter passed for up_down')
+        assert len(speeds) == len(accelerations), "speeds and accelerations should be the same length"
+
+        for i in range(len(speeds)):
+            self.speeds[i] = speeds[i]
+            self.accls[i] = accelerations[i]
+            self.motors[i].setup_jog(max_velocity=speeds[i], acceleration=accelerations[i])
         
-        self.motors[motor].setup_jog(max_velocity=new_speed)
         return True
 
     def get_snake(self, z_corners=[0, 0, 0]):
