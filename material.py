@@ -1,19 +1,19 @@
 from skimage.feature import canny
 from skimage.color import lab2rgb, rgb2gray, rgb2lab
-from skimage.filters.rank import entropy, gradient
-from skimage.filters import sobel, unsharp_mask
-from scipy.ndimage import gaussian_filter, gaussian_gradient_magnitude, generic_filter
+from scipy.ndimage import gaussian_filter
 from skimage.morphology import disk
 import numpy as np
 import cv2
 import concurrent.futures
+from utils import blur
+from segmenter2 import Segmenter
 
 class EdgeMethod():
-  def __init__(self, canny_sigma = 0.7):
-    self.canny_sigma = canny_sigma
+    def __init__(self, canny_sigma = 0.7):
+        self.canny_sigma = canny_sigma
   
-  def __call__(self, img):
-    return canny(rgb2gray(img), sigma=self.canny_sigma).astype('float32')
+    def __call__(self, img):
+        return canny(rgb2gray(img), sigma=self.canny_sigma).astype('float32')
 
 def lab_separate(img, l_factor = 1, l_midpoint=50, a_factor = 1, a_midpoint=50, b_factor = 1, b_midpoint = 50):
     lab = rgb2lab(img)
@@ -27,15 +27,15 @@ def lab_separate(img, l_factor = 1, l_midpoint=50, a_factor = 1, a_midpoint=50, 
     return lab2rgb(lab)
 
 class GrapheneEdgeMethod(EdgeMethod):
-  def __call__(self, img):
-    e1 = canny(rgb2gray(lab_separate(img, l_factor=1.5, a_factor=1, b_factor=2, l_midpoint=50, a_midpoint=-47, b_midpoint=-50)), sigma=1.75)
-    e1_5 = canny(rgb2gray(lab_separate(img, 1.5, l_midpoint=50)), sigma=1.4)
-    e2 = canny(rgb2gray(lab_separate(img, 2, l_midpoint=50)), sigma=0.5)
-    e2b = canny(rgb2gray(lab_separate(img, 2, l_midpoint=60)), sigma=1.4)
-    e2total = np.logical_and(e2, e2b)
-    combined = np.logical_or(e1_5, e2total)
-    combined = np.logical_or(combined, e1)
-    return combined
+    def __call__(self, img):
+        e1 = canny(rgb2gray(lab_separate(img, l_factor=1.5, a_factor=1, b_factor=2, l_midpoint=50, a_midpoint=-47, b_midpoint=-50)), sigma=1.75)
+        e1_5 = canny(rgb2gray(lab_separate(img, 1.5, l_midpoint=50)), sigma=1.4)
+        e2 = canny(rgb2gray(lab_separate(img, 2, l_midpoint=50)), sigma=0.5)
+        e2b = canny(rgb2gray(lab_separate(img, 2, l_midpoint=60)), sigma=1.4)
+        e2total = np.logical_and(e2, e2b)
+        combined = np.logical_or(e1_5, e2total)
+        combined = np.logical_or(combined, e1)
+        return combined
   
 
 def subdivide(image, n):
@@ -69,7 +69,7 @@ def combine_sections(sections, n, original_shape=None):
         sections (list): List of n^2 numpy arrays (subsections).
         n (int): Number of subdivisions per axis.
         original_shape (tuple, optional): The original image shape (h, w) or (h, w, c).
-                                          If not provided, it will be inferred.
+                                        If not provided, it will be inferred.
 
     Returns:
         np.ndarray: The reconstructed image.
@@ -139,71 +139,166 @@ def opencv_rank_gradient(image, selem):
 
     # Use OpenCV to compute local min and max
     kernel = selem.astype(np.uint8)
-    local_max = cv2.dilate(image, kernel)
-    local_min = cv2.erode(image, kernel)
+    local_max = cv2.dilate(image, kernel, iterations=1)
+    local_min = cv2.erode(image, kernel, iterations=1)
     gradient = local_max - local_min
     return gradient
 
+def nonmax_suppression(gradient, angle):
+    """
+    Performs nonmax suppression on gradient by calculating gradient direction.
+    Vectorized implementation for speed.
+    """
+
+    angle = angle * 180. / np.pi
+    angle[angle < 0] += 180
+
+    suppressed = np.zeros_like(gradient)
+    rows, cols = gradient.shape
+
+    # Pad gradient for edge handling
+    padded = np.pad(gradient, ((1, 1), (1, 1)), mode='constant')
+
+    # Create masks for each angle range
+    mask_0 = ((angle >= 0) & (angle < 22.5)) | ((angle >= 157.5) & (angle <= 180))
+    mask_45 = (angle >= 22.5) & (angle < 67.5)
+    mask_90 = (angle >= 67.5) & (angle < 112.5)
+    mask_135 = (angle >= 112.5) & (angle < 157.5)
+
+    # For each mask, compare with neighbors using slicing
+    i, j = np.ogrid[1:rows+1, 1:cols+1]
+
+    # Angle 0
+    q = padded[i, j+1]
+    r = padded[i, j-1]
+    suppressed[mask_0] = gradient[mask_0] * ((gradient[mask_0] >= q[mask_0]) & (gradient[mask_0] >= r[mask_0]))
+
+    # Angle 45
+    q = padded[i-1, j-1]
+    r = padded[i+1, j+1]
+    suppressed[mask_45] = gradient[mask_45] * ((gradient[mask_45] >= q[mask_45]) & (gradient[mask_45] >= r[mask_45]))
+
+    # Angle 90
+    q = padded[i-1, j]
+    r = padded[i+1, j]
+    suppressed[mask_90] = gradient[mask_90] * ((gradient[mask_90] >= q[mask_90]) & (gradient[mask_90] >= r[mask_90]))
+
+    # Angle 135
+    q = padded[i-1, j+1]
+    r = padded[i+1, j-1]
+    suppressed[mask_135] = gradient[mask_135] * ((gradient[mask_135] >= q[mask_135]) & (gradient[mask_135] >= r[mask_135]))
+
+    return suppressed
+   
+   
+
 class EntropyEdgeMethod(EdgeMethod):
-  def __init__(self, k=3, magnification=20, sigma=0, threshold=None):
-    self.k = k
-    self.mag = magnification
-    self.sigma = sigma
-    self.threshold = threshold
+    def __init__(self, k=3, magnification=20, sigma=0, threshold=None, args=[]):
+        self.k = k
+        self.mag = magnification
+        self.sigma = sigma
+        self.threshold = threshold
+        self.dp = args
 
-  def __call__(self, img):
-    '''
-    Input 2K or 4K resolution images for best results.
-    '''
+    def __call__(self, seg_or_img, apply_threshold = True):
+        '''
+        Input 2K or 4K resolution images for best results.
+        '''
 
-    if len(img.shape) == 3:
-      input = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    else :
-       input = img
-    sections = subdivide(input, self.k)
-    if self.mag <= 20:
-       disk_radius = 1
-       percentile_threshold = 80
-    else:
-      disk_radius = 3
-      percentile_threshold = 85
+        if type(seg_or_img) is Segmenter:
+            img = seg_or_img.img
+        else:
+            img = seg_or_img
 
-    footprint = disk(disk_radius)
+        if len(img.shape) == 3:
+            input = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        else :
+            input = img
+        
+        sections = subdivide(input, self.k)
+        if self.mag <= 20:
+            disk_radius = self.dp[0][0]
+            percentile_threshold = self.dp[0][1]
+            print(percentile_threshold)
+        else:
+            disk_radius = self.dp[-1][0]
+            percentile_threshold = self.dp[-1][1]
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-      futures = [executor.submit(opencv_rank_gradient, section, footprint) for section in sections]
-      entropied_sections = [f.result() for f in futures]
+        footprint = disk(disk_radius)
 
-    entropied = combine_sections(entropied_sections, self.k)
-    # entropied = np.pow(entropied, 2**(-2))
-    entropied = np.pow(entropied, 2.5)
-    entropied = (entropied/np.max(entropied))
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [executor.submit(opencv_rank_gradient, section, footprint) for section in sections]
+            entropied_sections = [f.result() for f in futures]
+        entropied = combine_sections(entropied_sections, self.k)
+        
+        # entropied = np.pow(entropied, 2**(-2))
+        entropied = np.pow(entropied, 2.5)
+        entropied = (entropied/np.max(entropied))
 
-    # sobeled = sobel(input)
-    # sobeled = np.pow(sobeled, 2**(-2))
-    # sobeled = (sobeled/np.max(sobeled))
+        if apply_threshold:
+            if self.threshold is None:
+                threshold = np.percentile(entropied, percentile_threshold) * 1.25
+            else:
+                threshold = self.threshold
+            return entropied > threshold
+        else:
+            return entropied
 
-    # entropied = 2*entropied + sobeled
-    # entropied = np.pow(entropied, 2**2)
-    # entropied = (entropied/np.max(entropied))
+class LABSobelEdgeMethod(EdgeMethod):
+    def __init__(self, k=3, magnification=20, sigma=0, threshold=None, args=[]):
+        self.k = k
+        self.mag = magnification
+        self.sigma = sigma
+        self.threshold = threshold
+        if magnification >= 20:
+            self.btr = args[0]
+        else:
+            self.btr = args[1]
 
-    if self.threshold is None:
-      threshold = np.percentile(entropied, percentile_threshold) * 1.25
-    else:
-       threshold = self.threshold
-    return entropied > threshold
-    # entropied[entropied < threshold] = 0
-    # entropied = gaussian_filter(entropied, sigma=self.sigma)
-    # return entropied
+    def __call__(self, seg_or_img, apply_threshold = True):
+        '''
+        Input 2K or 4K resolution images for best results.
+        '''
+
+        if type(seg_or_img) is Segmenter:
+            blurred = blur(seg_or_img.lab.copy(), self.btr[0])
+        else:
+            blurred = blur(seg_or_img.copy(), self.btr[0])
+
+        mag = np.zeros_like(blurred[:,:,0]).astype('float64')
+        
+        for i in range(3):
+            grad_x = cv2.Sobel(blurred[:,:,i].astype(np.float32), cv2.CV_64F, 1, 0, ksize=5)
+            grad_y = cv2.Sobel(blurred[:,:,i].astype(np.float32), cv2.CV_64F, 0, 1, ksize=5)
+            mag += np.pow(grad_x, 2) + np.pow(grad_y, 2)
+        mag = np.pow(mag, 2**(-2))
+
+        footprint = np.ones((5,5))
+        mag = cv2.dilate(mag, footprint, iterations=1)
+        mag = cv2.erode(mag, footprint, iterations=1)
+
+        threshold = self.btr[1]
+        mag[mag<=threshold] = 0
+
+        if self.mag < 20:
+            footprint = disk(self.btr[2])
+            mag -= cv2.erode(mag, footprint, iterations=1)
+
+        if apply_threshold:
+            return mag > threshold - 1
+        else:
+            mag[mag<=threshold-1] = 0
+            return mag
 
 class Material():
-  def __init__(self, name, target_bg_lab, layer_labels, sigma=0.7, fat_threshold=0.1, Edge_Method = EdgeMethod):
-    self.name = name
-    self.target_bg_lab = target_bg_lab
-    self.layer_labels = layer_labels
-    self.recommended_sigma = sigma
-    self.recommended_fat_threshold = fat_threshold
-    self.Edge_Method = Edge_Method
+    def __init__(self, name, target_bg_lab, layer_labels, sigma=0.7, fat_threshold=0.1, Edge_Method = EdgeMethod, args = []):
+        self.name = name
+        self.target_bg_lab = target_bg_lab
+        self.layer_labels = layer_labels
+        self.recommended_sigma = sigma
+        self.recommended_fat_threshold = fat_threshold
+        self.Edge_Method = Edge_Method
+        self.args = args
 
 
 # Make each material
@@ -251,26 +346,29 @@ graphene = Material(
     sigma=3,
     fat_threshold=0.005,
     Edge_Method = EntropyEdgeMethod,
+    args = [[1, 80], [3, 80]] # disk radius and percentile
   )
 
 
 hBN_labels = { # cielab colorspace
-                  (37.4, 16.6, -8.3): '0-10',
-                  (43.9, 25.6, -64.8): '10-20',
-                  (62.2, -11.6, -41.3): '20-30',
-                  (72.8, -35, -15.1): '30+',
-                  (71.8, -25.5, 0): '35+',
-                  # (69.4, -3.5, 50.8): 'bulk',
-                  # (53, -8, -12): 'bluish_layers',
-                  # (50, 1, -10): 'more_bluish_layers',
+                  (50, 22, -3): '0-10',
+                  (48, 15, -9): '10-20',
+                  (56, -16, -15): '20-30',
+                  (81, -41, 1): '30-40',
+                  (100, -30, 30): '40+',
+                  (78, 22, 1): '40+',
                   (30, 20, -10): 'dirt',
               }
 
 hBN = Material(
     'hBN', 
-    [39.43335796, 14.2159274,  -4.54227961], 
+    [49, 27.5,  8.5], 
     layer_labels=hBN_labels, 
     sigma=0.7, 
     fat_threshold=0.1,
-    Edge_Method=EntropyEdgeMethod,
+    Edge_Method=LABSobelEdgeMethod,
+    args = [
+       [2, 9.5, 4], # Blur, Threshold, and Disk Radius
+       [0.5, 9.5, 4]
+       ] 
   )

@@ -9,7 +9,7 @@ class Segmenter():
         self.size = img.shape[:2]
         self.target_bg_lab = material.target_bg_lab
         self.layer_labels = material.layer_labels
-        self.edge_method = material.Edge_Method(k=k, magnification=magnification)
+        self.edge_method = material.Edge_Method(k=k, magnification=magnification, args=material.args)
         self.colors = colors
         self.numbers = numbers
         self.min_area = min_area
@@ -32,10 +32,10 @@ class Segmenter():
 
         self.segment_edges = segment_edges
 
-        self.edges = self.edge_method(self.img)
-        if black_zone_mask is not None:
-            if segment_edges:
+        self.edges = self.edge_method(self)
+        if segment_edges:
                 old_copy = self.edges.copy()
+        if black_zone_mask is not None:
             self.edges[black_zone_mask] = 1
         self.masks, self.num_masks = label(np.logical_not(self.edges))
         self.mask_ids, self.mask_areas = np.unique(self.masks, return_counts=True)
@@ -46,13 +46,12 @@ class Segmenter():
 
         if segment_edges:
             # Relabel masks 
+            sin_bg = np.logical_not(self.edges)
+            sin_bg[self.masks == self.bg_mask_id] = 0
+            self.mask_template = np.logical_or(old_copy, sin_bg)
+
             if black_zone_mask is not None:
-                sin_bg = np.logical_not(self.edges)
-                sin_bg[self.masks == self.bg_mask_id] = 0
-                self.mask_template = np.logical_or(old_copy, sin_bg)
                 self.mask_template[black_zone_mask] = 0
-            else:
-                self.mask_template = self.edges
             
             self.masks, self.num_masks = label(self.mask_template)
             self.mask_ids, self.mask_areas = np.unique(self.masks, return_counts=True)
@@ -95,38 +94,53 @@ class Segmenter():
                 points.append(np.array([y, x]))
                 values.append(self.lab[y, x, :])
 
-        # Outer Circle Points
-        i = 0
-        while len(points) < num_points:
-            r = self.focus_disks[0][1]
-            theta = i * np.pi / (num_points // 4)
-            x = int(r * np.cos(theta)) + self.lab.shape[1] // 2
-            y = int(r * np.sin(theta)) + self.lab.shape[0] // 2
-            i += 1
+        if len(self.focus_disks) > 0:
+            # Outer Circle Points
+            i = 0
+            while len(points) < num_points:
+                r = self.focus_disks[0][1]
+                theta = i * np.pi / (num_points // 4)
+                x = int(r * np.cos(theta)) + self.lab.shape[1] // 2
+                y = int(r * np.sin(theta)) + self.lab.shape[0] // 2
+                i += 1
 
-            if not((x < 0 or x >= self.lab.shape[1]) or (y < 0 or y >= self.lab.shape[0])):
+                if not((x < 0 or x >= self.lab.shape[1]) or (y < 0 or y >= self.lab.shape[0])):
+                    if self.bg_mask[y,x] != 0:
+                        points.append(np.array([y, x]))
+                        values.append(self.lab[y, x, :])
+                    else:
+                        i -= 0.5
+
+            # Corner points
+            x0 = self.lab.shape[1] // 2 - np.sqrt(np.pow(r, 2) - np.pow(self.lab.shape[0] // 2, 2))
+            y0 = 0
+            x0 = int(x0)
+            x1 = self.lab.shape[1] - x0
+            y1 = self.lab.shape[0] - 1
+
+            points.append(np.array([y0, x0]))
+            points.append(np.array([y0, x1]))
+            points.append(np.array([y1, x0]))
+            points.append(np.array([y1, x1]))
+
+            values.append(self.lab[y0, x0, :])
+            values.append(self.lab[y0, x1, :])
+            values.append(self.lab[y1, x0, :])
+            values.append(self.lab[y1, x1, :])
+        else:
+            # Rest of the Inner Points
+            while len(points) < num_points - 4:
+                x = np.random.randint(low=0, high=self.lab.shape[1])
+                y = np.random.randint(low=0, high=self.lab.shape[0])
                 if self.bg_mask[y,x] != 0:
                     points.append(np.array([y, x]))
                     values.append(self.lab[y, x, :])
-                else:
-                    i -= 0.5
 
-        # Corner points
-        x0 = self.lab.shape[1] // 2 - np.sqrt(np.pow(r, 2) - np.pow(self.lab.shape[0] // 2, 2))
-        y0 = 0
-        x0 = int(x0)
-        x1 = self.lab.shape[1] - x0
-        y1 = self.lab.shape[0] - 1
-
-        points.append(np.array([y0, x0]))
-        points.append(np.array([y0, x1]))
-        points.append(np.array([y1, x0]))
-        points.append(np.array([y1, x1]))
-
-        values.append(self.lab[y0, x0, :])
-        values.append(self.lab[y0, x1, :])
-        values.append(self.lab[y1, x0, :])
-        values.append(self.lab[y1, x1, :])
+            # Corner Points
+            for i in [0, self.lab.shape[0] - 1]:
+                for j in [0, self.lab.shape[1] - 1]:
+                    points.append(np.array([i, j]))
+                    values.append(self.lab[i, j, :])
 
         # Interpolation
         points = np.stack(points, axis=0)
@@ -144,8 +158,10 @@ class Segmenter():
         self.lab[:,:,0] -= l_bg - int(self.target_bg_lab[0])
         self.lab[:,:,1] -= a_bg - int(self.target_bg_lab[1])
         self.lab[:,:,2] -= b_bg - int(self.target_bg_lab[2])
-        f2 = self.focus_disks[-1][0]
-        self.lab[f2] = 0
+
+        if len(self.focus_disks) > 0:
+            f2 = self.focus_disks[-1][0]
+            self.lab[f2] = 0
         self.l_bg = l_bg
         return l_bg
 

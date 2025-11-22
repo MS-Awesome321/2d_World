@@ -1,5 +1,6 @@
 import time
 import numpy as np
+import cv2
 from skimage.color import lab2rgb, rgb2gray, rgb2lab
 from skimage.morphology import disk
 
@@ -87,3 +88,19 @@ def focus_disk(img, radius=200, invert=False):
         return np.logical_not(d)
     else:
         return d
+    
+def blur(img, sigma):
+    ksize = int(2 * round(3 * sigma) + 1) if sigma > 0 else 1
+    if ksize % 2 == 0:
+        ksize += 1
+    if sigma == 0:
+        return img.copy()
+
+    channels = []
+    if len(img.shape) == 3:
+        num_channels = img.shape[-1]
+    else:
+        num_channels = 1
+    for i in range(num_channels):
+        channels.append(cv2.GaussianBlur(img[:,:,i], (ksize, ksize), sigmaX=sigma, sigmaY=sigma))
+    return np.stack(channels, axis=-1)
