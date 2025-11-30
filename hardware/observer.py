@@ -1,8 +1,13 @@
+import sys
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+hardware_dir = os.path.join(os.path.dirname(current_dir), 'segmenter')
+sys.path.append(hardware_dir)
+
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from livesegment import LiveSegment
 import time
-import os
 from utils import focus_disk
 import numpy as np
 

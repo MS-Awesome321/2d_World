@@ -5,9 +5,9 @@ import os
 import time
 # Add the hardware directory to the Python path using relative path
 current_dir = os.path.dirname(os.path.abspath(__file__))
-hardware_dir = os.path.join(os.path.dirname(current_dir), 'hardware')
+hardware_dir = os.path.join(os.path.dirname(current_dir), 'hardware', 'motor_control')
 sys.path.append(hardware_dir)
-from go import autosearch
+from autosearch import autosearch
 from corner import calibrate_corners
 from transfer_arm import TransferArm
 import subprocess

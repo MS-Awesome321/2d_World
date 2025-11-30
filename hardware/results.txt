@@ -1,8 +1,0 @@
-mono_sizes: 
-bi_sizes: 
-mono_frame_nums: 
-bi_frame_nums: 
-mono_x: 
-mono_y: 
-bi_x: 
-bi_y: 

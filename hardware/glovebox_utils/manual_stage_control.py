@@ -1,0 +1,31 @@
+import sys
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+hardware_dir = os.path.join(current_dir, 'motor_control')
+sys.path.append(hardware_dir)
+
+import keyboard
+from stage import Stage
+
+x = '27503936'
+y = '27503951'
+
+test_stage = Stage(x, y, magnification=50)
+test_stage.x_motor.setup_jog(max_velocity=100_000, acceleration=700_000)
+test_stage.y_motor.setup_jog(max_velocity=100_000, acceleration=700_000)
+try:
+    x = float(sys.argv[1])
+    y = float(sys.argv[2])
+    test_stage.move_to([x, y])
+except:
+    pass
+
+try:
+    print('Starting Manual Motor Control')
+    print('Press q to end Manual Motor Control')
+    if test_stage.start_manual_control('q', focus_comport='COM5', turret_comport='COM7', wasd=True):
+        print('Ended manual control mode.')
+
+except KeyboardInterrupt:
+    test_stage.stop()
+    print('Stopped Motion.')

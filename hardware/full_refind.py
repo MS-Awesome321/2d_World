@@ -11,6 +11,14 @@ from tqdm import tqdm
 import keyboard
 import sys
 
+"""
+Usage: python full_refind.py n
+n tells the program to refind the top n monolayer/bilayer matches
+given a positioned and searched chip. Use autosearch.py and
+chipRepositiong.py first.
+"""
+
+
 result_txt = 'results.txt'
 results_100 = 'results100.txt'
 grow = 2

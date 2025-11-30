@@ -1,5 +1,11 @@
-import numpy as np
+import sys
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+hardware_dir = os.path.join(current_dir, 'motor_control')
+sys.path.append(hardware_dir)
 from focus import Focus
+
+import numpy as np
 from PIL import ImageGrab
 import cv2
 import keyboard
