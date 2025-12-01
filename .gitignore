@@ -14,3 +14,4 @@ hardware/__pycache__/
 photo_dir*
 results_*
 api_key.py
+Segmentation_Training
