@@ -193,7 +193,10 @@ def autosearch(z_corners: List[int], angle: int, chip_dims:List[float], num_top_
     return [result_txt, result_txt_m100]
 
 if __name__ == '__main__':
-    z_corners = [-4290, -5920, -960]
+    z_corners = [-4290, -5920, -960] # Dont need with an autofoucs camera
     angle = 180
     chip_dims = [1.7, 0.91]
     print(autosearch(z_corners=z_corners, angle=angle, chip_dims=chip_dims, num_top_matches=int(sys.argv[1]), is_main=True))
+
+# python autosearch.py n
+# n is an integer

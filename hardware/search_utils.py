@@ -1,12 +1,17 @@
+import sys
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+hardware_dir = os.path.join(current_dir, 'motor_control')
+sys.path.append(hardware_dir)
+segmenter_dir = os.path.join(os.path.dirname(current_dir), 'segmenter')
+sys.path.append(segmenter_dir)
+
 import numpy as np
-import subprocess
 import time
 import os
 import cv2
 from focus import Focus
-import sys
-sys.path.append('C:/Users/admin/Desktop/2d_World/')
-from segmenter2 import Segmenter
+from segmenter import Segmenter
 from material import wte2, graphene, EntropyEdgeMethod
 from autofocus import autofocus, color_count_score
 from PIL import ImageGrab, Image
@@ -15,10 +20,15 @@ import multiprocessing
 from turret import Turret
 from autofocus import incremental_check
 
+
+def blur_score(image, shrink =2):
+    frame = cv2.resize(image, (int(image.shape[1]/shrink), int(image.shape[0]/shrink)))
+    return np.log(cv2.Laplacian(frame, cv2.CV_32FC1).var())
+
 class GetOptFocus():
     def __init__(self, range):
         self.range = range
-        os.chdir('C:/Users/admin/Desktop/2d_World/hardware/photo_dir')
+        os.chdir(os.path.join(current_dir, 'photo_dir'))
         self.data = []
 
     def __call__(self, pos, focus_motor):
@@ -48,21 +58,41 @@ class WF():
         self.photo_dir = photo_dir
         self.min_blur = min_blur
 
-    def wait_focus_and_click(self, focus_motor=None, n_cols=50, end=False):
+    def wait_focus_and_click(self, min_blur=3.5, end=10):
         if keyboard.is_pressed('q'):
             raise KeyboardInterrupt
 
-        temp = focus_motor.get_pos()
-        d = 1 if self.counter//n_cols % 2 == 0 else -1
-        final_score = autofocus(auto_stop=True, q_stop=True, focus=focus_motor, timeup=2, direction=d, change_factor=0.25)
-        focus_motor.position = temp
+        
+        score = 0
+        frame = None
+        i = 0
 
-        if self.take_pic:
+        while score < min_blur and i < end:
             bgr_frame =  np.array(ImageGrab.grab(bbox=(432,137,1782,892)))
             frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
+            score = blur_score(frame)
+            i += 1
+
+        if score > min_blur:
             cv2.imwrite(f'{self.photo_dir}/test_{self.counter}.jpg', frame)
 
         self.counter += 1
+
+    # def wait_focus_and_click(self, focus_motor=None, n_cols=50, end=False):
+    #     if keyboard.is_pressed('q'):
+    #         raise KeyboardInterrupt
+
+    #     temp = focus_motor.get_pos()
+    #     d = 1 if self.counter//n_cols % 2 == 0 else -1
+    #     final_score = autofocus(auto_stop=True, q_stop=True, focus=focus_motor, timeup=2, direction=d, change_factor=0.25)
+    #     focus_motor.position = temp
+
+    #     if self.take_pic:
+    #         bgr_frame =  np.array(ImageGrab.grab(bbox=(432,137,1782,892)))
+    #         frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
+    #         cv2.imwrite(f'{self.photo_dir}/test_{self.counter}.jpg', frame)
+
+    #     self.counter += 1
 
 class WF_M100():
     def __init__(self, photo_dir, turret_comport, take_pic = True, min_blur = 2.5, result_txt='results.txt'):
