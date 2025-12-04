@@ -62,7 +62,7 @@ def autosearch(z_corners: List[int], angle: int, chip_dims:List[float], num_top_
         stage = Stage(x, y, focus_comport='COM5', magnification=10)
 
     if lens is None:
-        lens = Turret('COM7')
+        lens = Turret('COM11')
 
     # AUTOSEARCH
     try:
