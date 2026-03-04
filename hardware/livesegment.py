@@ -3,7 +3,7 @@ import numpy as np
 import os
 import sys
 sys.path.append('C:/Users/admin/Desktop/2d_World/')
-from segmenter2 import Segmenter
+from segmenter import Segmenter
 from material import graphene
 from tqdm import tqdm
 from utils import focus_disk

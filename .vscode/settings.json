@@ -1,5 +1,3 @@
 {
-    "python.analysis.extraPaths": [
-        "./hardware"
-    ]
+    "python.analysis.extraPaths": ["/Users/mayanksengupta/Desktop/2d_World/segmenter/", "/Users/mayanksengupta/Desktop/2d_World/hardware/"]
 }

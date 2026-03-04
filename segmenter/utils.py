@@ -104,3 +104,23 @@ def blur(img, sigma):
     for i in range(num_channels):
         channels.append(cv2.GaussianBlur(img[:,:,i], (ksize, ksize), sigmaX=sigma, sigmaY=sigma))
     return np.stack(channels, axis=-1)
+
+def smooth(img, radius):
+    kernel = disk(radius)
+    total = np.sum(kernel)
+    return cv2.filter2D(img, ddepth=-1, kernel=kernel/total)
+
+def get_mag(fname):
+    if "M100" in fname or "m100" in fname:
+        return 100
+    elif "M50" in fname or "m50" in fname:
+        return 50
+    elif "M20" in fname or "m20" in fname:
+        return 20
+    elif "M10" in fname or "m10" in fname:
+        return 10
+    elif "M5" in fname or "m5" in fname:
+        return 5
+    else:
+        return 10
+    

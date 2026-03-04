@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import os
-from segmenter2 import Segmenter
+from segmenter import Segmenter
 from material import graphene
 from tqdm import tqdm
 from utils import Stopwatch, focus_disk
@@ -25,57 +25,35 @@ colors_by_layer = {
 
 # image_path = os.listdir("../monolayerGraphene/monolayer_Graphene/")[int(sys.argv[1])]
 
-dir = '/Users/mayanksengupta/Downloads/extra'
-result_dir = '/Users/mayanksengupta/Downloads/extra'
+dir = '/Users/mayanksengupta/Desktop/monolayerGraphene/monolayer_Graphene'
+result_dir = '/Users/mayanksengupta/Desktop/monolayerGraphene/Labeled/M100_new'
 files = os.listdir(dir)
+m100 = []
+
+for fname in files:
+    if 'M100' in fname:
+        m100.append(fname)
 
 monolayer_sizes = np.array([])
 mono_frame_nums = np.array([])
 bilayer_sizes = np.array([])
 bi_frame_nums = np.array([])
 
-grow = 2
-rad = int(430*grow)
-f1 = focus_disk(np.zeros((755 * grow, 1350 * grow)), rad, invert=True)
-f2 = focus_disk(np.zeros((755 * grow, 1350 * grow)), rad - 10, invert=True)
+shrink = 2
+# rad = int(430*grow)
+# f1 = focus_disk(np.zeros((755 * grow, 1350 * grow)), rad, invert=True)
+# f2 = focus_disk(np.zeros((755 * grow, 1350 * grow)), rad - 10, invert=True)
 
-def blur(img, sigma):
-    r = gaussian_filter(img[:,:,0], sigma)
-    g = gaussian_filter(img[:,:,1], sigma)
-    b = gaussian_filter(img[:,:,2], sigma)
-    return np.stack([r, g, b], axis=-1)
-
-for filename in tqdm(files):
-    # if 'M100' in filename:
-    #     magnification = 100
-    #     folder = 'M100'
-    # elif 'M50' in filename:
-    #     magnification = 50
-    #     folder = 'M50'
-    # elif 'M20' in filename:
-    #     magnification = 20
-    #     folder = 'M20'
-    # elif 'M10' in filename:
-    #     magnification = 10
-    #     folder = 'M10'
-    # elif 'M5' in filename:
-    #     magnification = 5
-    #     folder = 'M5'
-    # else:
-    #     magnification = 20
-    #     folder = 'M20'
-
-    if 'm100' not in filename or 'segmented' in filename:
-        continue
-
+for filename in tqdm(m100):
+    
     g1 = cv2.imread(f'{dir}/{filename}')
     try:
         g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
-        g1 = cv2.resize(g1, (int(g1.shape[1] * grow), int(g1.shape[0] * grow)))
-        g1 = blur(g1, 2)
+        g1 = cv2.resize(g1, (int(g1.shape[1] // shrink), int(g1.shape[0] // shrink)))
 
         # Initialize Segmenter
-        segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=100, min_area=200, focus_disks=[(f1, rad), (f2, rad-10)])
+        # segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=100, min_area=200, focus_disks=[(f1, rad), (f2, rad-10)])
+        segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=100, min_area=50, k=3)
         segmenter.process_frame(segment_edges=False)
         result = segmenter.prettify()
         result = (255 * result).astype(np.uint8)

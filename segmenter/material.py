@@ -5,8 +5,8 @@ from skimage.morphology import disk
 import numpy as np
 import cv2
 import concurrent.futures
-from utils import blur
-from segmenter2 import Segmenter
+from utils import blur, smooth
+from segmenter import Segmenter
 
 class EdgeMethod():
     def __init__(self, canny_sigma = 0.7):
@@ -122,7 +122,7 @@ def hessian_determinant(image, sigma=1):
     det_H = Ixx * Iyy - Ixy ** 2
     return det_H
 
-def opencv_rank_gradient(image, selem):
+def rank_gradient(image, selem, dilate_iters = 1, erode_iters = 1):
     """
     Mimics skimage.filters.rank.gradient using OpenCV and NumPy.
 
@@ -133,14 +133,11 @@ def opencv_rank_gradient(image, selem):
     Returns:
         np.ndarray: Gradient image (uint8).
     """
-    # Ensure image is uint8
-    if image.dtype != np.uint8:
-        image = (255 * (image - np.min(image)) / (np.ptp(image) + 1e-8)).astype(np.uint8)
 
     # Use OpenCV to compute local min and max
     kernel = selem.astype(np.uint8)
-    local_max = cv2.dilate(image, kernel, iterations=1)
-    local_min = cv2.erode(image, kernel, iterations=1)
+    local_max = cv2.dilate(image, kernel, iterations=dilate_iters)
+    local_min = cv2.erode(image, kernel, iterations=erode_iters)
     gradient = local_max - local_min
     return gradient
 
@@ -227,12 +224,12 @@ class EntropyEdgeMethod(EdgeMethod):
         footprint = disk(disk_radius)
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = [executor.submit(opencv_rank_gradient, section, footprint) for section in sections]
+            futures = [executor.submit(rank_gradient, section, footprint) for section in sections]
             entropied_sections = [f.result() for f in futures]
         entropied = combine_sections(entropied_sections, self.k)
         
-        # entropied = np.pow(entropied, 2**(-2))
-        entropied = np.pow(entropied, 2.5)
+        # entropied = np.power(entropied, 2**(-2))
+        entropied = np.power(entropied, 2.5)
         entropied = (entropied/np.max(entropied))
 
         if apply_threshold:
@@ -244,51 +241,46 @@ class EntropyEdgeMethod(EdgeMethod):
         else:
             return entropied
 
-class LABSobelEdgeMethod(EdgeMethod):
+class HBNEdgeMethod(EdgeMethod):
     def __init__(self, k=3, magnification=20, sigma=0, threshold=None, args=[]):
         self.k = k
         self.mag = magnification
         self.sigma = sigma
         self.threshold = threshold
-        if magnification >= 20:
-            self.btr = args[0]
+        if magnification >= 50:
+            self.args = args[0]
+        elif magnification == 20:
+            self.args = args[1]
+        elif magnification == 10:
+            self.args = args[2]
         else:
-            self.btr = args[1]
+            self.args = args[3]
 
     def __call__(self, seg_or_img, apply_threshold = True):
         '''
         Input 2K or 4K resolution images for best results.
         '''
 
+        r, b, threshold, dilate_iterations = self.args
+
         if type(seg_or_img) is Segmenter:
-            blurred = blur(seg_or_img.lab.copy(), self.btr[0])
+            blurred = blur(seg_or_img.lab.copy(), b)
         else:
-            blurred = blur(seg_or_img.copy(), self.btr[0])
+            blurred = blur(seg_or_img.copy(), b)
 
-        mag = np.zeros_like(blurred[:,:,0]).astype('float64')
-        
-        for i in range(3):
-            grad_x = cv2.Sobel(blurred[:,:,i].astype(np.float32), cv2.CV_64F, 1, 0, ksize=5)
-            grad_y = cv2.Sobel(blurred[:,:,i].astype(np.float32), cv2.CV_64F, 0, 1, ksize=5)
-            mag += np.pow(grad_x, 2) + np.pow(grad_y, 2)
-        mag = np.pow(mag, 2**(-2))
+        # edges = np.zeros_like(blurred[:,:,0]).astype('float64')
+        footprint = disk(r)
 
-        footprint = np.ones((5,5))
-        mag = cv2.dilate(mag, footprint, iterations=1)
-        mag = cv2.erode(mag, footprint, iterations=1)
-
-        threshold = self.btr[1]
-        mag[mag<=threshold] = 0
-
-        if self.mag < 20:
-            footprint = disk(self.btr[2])
-            mag -= cv2.erode(mag, footprint, iterations=1)
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [executor.submit(rank_gradient, blurred[:,:,i], footprint, dilate_iterations, dilate_iterations) for i in range(3)]
+            channel_gradients = [f.result() for f in futures]
+        edges = channel_gradients[0] + channel_gradients[1] + channel_gradients[2]
+        # edges = cv2.dilate(edges, disk(5), iterations=3)
 
         if apply_threshold:
-            return mag > threshold - 1
+            return edges > threshold
         else:
-            mag[mag<=threshold-1] = 0
-            return mag
+            return edges
 
 class Material():
     def __init__(self, name, target_bg_lab, layer_labels, sigma=0.7, fat_threshold=0.1, Edge_Method = EdgeMethod, args = []):
@@ -312,17 +304,29 @@ wte2_labels = { # cielab colorspace
                   (80, 5, 10): 'bulk',
                   (0, 0, 0): 'dirt',
                   (30, 20, -10): 'dirt',
+                  (0,0,0): 'black',
               }
 
-wte2 = Material('WTe2', [58.50683594, 28.57762527, -2.79295444], layer_labels=wte2_labels)
+wte2 = Material(
+    'WTe2',
+    [58.50683594, 28.57762527, -2.79295444],
+    layer_labels=wte2_labels,
+    Edge_Method = HBNEdgeMethod,
+    args = [
+    [1, 2, 5, 5], # Radius, Blur, Threshold, and Dilate Iterations for M50 and higher
+    [1, 1.25, 5, 4], # M20
+    [1, 1.5, 5, 3], # M10
+    [1, 1, 5, 2] # M5
+    ],
+)
 
 graphene_labels = { # cielab colorspace
                   # (51, 14, 1): 'monolayer',
-                  (47, 12, 3): 'monolayer',
-                  (46, 17, 3): 'monolayer',
-                  (44, 17, 0): 'bilayer',
-                  (38, 21, -2): 'trilayer',
-                  (30, 10, -20): 'fewlayer',
+                #   (47, 12, 3): 'monolayer',
+                  (46.6, 15.4, 3.2): 'monolayer',
+                  (43.9, 18.9, 1.6): 'bilayer',
+                  (40.4, 23.6, -0.6): 'trilayer',
+                #   (30, 10, -20): 'fewlayer',
                   (50, 0, -8): 'manylayer',
                   (53, 0, 0): 'manylayer',
                 #   (66, -7, 11): 'manylayer',
@@ -336,7 +340,7 @@ graphene_labels = { # cielab colorspace
                   (53, 0, 8.5): 'dirt',
                   (39, 8, 8): 'dirt',
                 #   (30, 20, -10): 'dirt',
-                  (0,0,0): 'bg'
+                  (0,0,0): 'black'
               }
 
 graphene = Material(
@@ -345,19 +349,30 @@ graphene = Material(
     layer_labels=graphene_labels,
     sigma=3,
     fat_threshold=0.005,
-    Edge_Method = EntropyEdgeMethod,
-    args = [[1, 75], [3, 80]] # disk radius and percentile
+    Edge_Method = HBNEdgeMethod,
+    # args = [[1, 75], [3, 80]] # disk radius and percentile
+    args = [
+       [5, 3, 5, 6], # Radius, Blur, Threshold, and Dilate Iterations for M50 and higher
+       [2, 1.5, 5, 4], # M20
+       [2, 1.5, 5, 4], # M10
+       [1, 1, 5, 3] # M5
+       ],
   )
 
 
 hBN_labels = { # cielab colorspace
-                  (50, 22, -3): '0-10',
+                  (50, 20, -2): '0-10',
                   (48, 15, -9): '10-20',
                   (56, -16, -15): '20-30',
                   (81, -41, 1): '30-40',
+                  (93, -26, 18): '30-40',
                   (100, -30, 30): '40+',
-                  (78, 22, 1): '40+',
+                  (78, 22, -7): '40+',
+                  (90, 25, 50): '40+',
+                  (60, 20, -12): '40+',
                   (30, 20, -10): 'dirt',
+                #   (55, 17, 6): 'dirt',
+                  (0,0,0): 'black',
               }
 
 hBN = Material(
@@ -366,9 +381,11 @@ hBN = Material(
     layer_labels=hBN_labels, 
     sigma=0.7, 
     fat_threshold=0.1,
-    Edge_Method=LABSobelEdgeMethod,
+    Edge_Method=HBNEdgeMethod,
     args = [
-       [2, 9.5, 4], # Blur, Threshold, and Disk Radius
-       [0.5, 9.5, 4]
+       [1, 1.5, 6, 14], # Blur, Threshold, and Dilate Iterations for M50 and higher
+       [1, 1.5, 5, 4], # M20
+       [1, 1.5, 5, 4], # M10
+       [1, 1, 5, 1] # M5
        ] 
   )
