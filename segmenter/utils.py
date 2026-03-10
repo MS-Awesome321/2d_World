@@ -124,3 +124,41 @@ def get_mag(fname):
     else:
         return 10
     
+def compute_line_distance(line_point, line_direction,X):
+    """Compute distance of each point from the line"""
+    # Vector from line_point to each data point
+    to_points = X - line_point
+    
+    # Project onto line direction
+    proj_lengths = (to_points @ line_direction)[:, np.newaxis]
+    projections = line_point + proj_lengths * line_direction
+    
+    # Distance from line
+    distances = np.linalg.norm(X - projections, axis=1)
+    
+    return distances
+
+def compute_projection(line_point, line_direction,X):
+    """Compute projection of each point onto the line"""
+    # Vector from line_point to each data point
+    to_points = X - line_point
+    
+    # Project onto line direction
+    proj_lengths = (to_points @ line_direction)[:, np.newaxis]
+    projections = line_point + proj_lengths * line_direction
+
+    return np.linalg.norm(line_point - projections, axis=1)
+
+def compute_proj_dist(line_point, line_direction,X):
+    """Compute distance of each point from the line"""
+    # Vector from line_point to each data point
+    to_points = X - line_point
+    
+    # Project onto line direction
+    proj_lengths = (to_points @ line_direction)[:, np.newaxis]
+    projections = line_point + proj_lengths * line_direction
+    
+    # Distance from line
+    distances = np.linalg.norm(X - projections, axis=1)
+    
+    return distances, proj_lengths

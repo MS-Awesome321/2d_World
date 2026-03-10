@@ -1,5 +1,6 @@
 from scipy.stats import multivariate_normal
 import numpy as np
+from utils import compute_line_distance, compute_proj_dist, compute_projection
 
 class LineConstrainedGMM:
     """
@@ -274,35 +275,37 @@ if __name__=='__main__':
     if args.l:
         m = points[:, 0] < bg_lab[0]
         points = points[m]
-        labels = labels[m]
-
-    def compute_line_distance(line_point, line_direction,X):
-        """Compute distance of each point from the line"""
-        # Vector from line_point to each data point
-        to_points = X - line_point
-        
-        # Project onto line direction
-        proj_lengths = (to_points @ line_direction)[:, np.newaxis]
-        projections = line_point + proj_lengths * line_direction
-        
-        # Distance from line
-        distances = np.linalg.norm(X - projections, axis=1)
-        
-        return distances
-    
-    
+        labels = labels[m]    
 
     # PLOT POINTS
-    fig = plt.figure(figsize=(15, 8))
+    fig = plt.figure(figsize=(15, 12))
     axs = []
-    axs.append(fig.add_subplot(1, 3, 1, projection='3d'))
-    axs.append(fig.add_subplot(1, 3, 2, projection='3d', sharex=axs[0], sharey=axs[0], sharez=axs[0]))
-    axs.append(fig.add_subplot(1, 3, 3, projection='3d', sharex=axs[0], sharey=axs[0], sharez=axs[0]))
+    axs.append(fig.add_subplot(2, 3, 1, projection='3d'))
+    axs.append(fig.add_subplot(2, 3, 2, projection='3d', sharex=axs[0], sharey=axs[0], sharez=axs[0]))
+    axs.append(fig.add_subplot(2, 3, 3, projection='3d', sharex=axs[0], sharey=axs[0], sharez=axs[0]))
+    axs.append(fig.add_subplot(2, 3, 4))
+    axs.append(fig.add_subplot(2, 3, 5))
 
     thickness = ["monolayer", "bilayer", "trilayer", "fewlayer", "manylayer", "bulk", "bg", "dirt"]
     label_colors = ['blue', 'green', 'red', 'orange', 'black', 'purple', 'magenta', 'yellow']
+    new_colors = [
+        'black', 'blue', 'blueviolet', 'brown', 'cadetblue', 'chocolate', 
+        'coral', 'crimson', 'darkblue', 'darkcyan', 'darkgoldenrod', 
+        'darkgray', 'darkgreen', 'darkkhaki', 'darkmagenta', 'darkolivegreen', 
+        'darkorange', 'darkorchid', 'darkred', 'darksalmon', 'darkseagreen', 
+        'darkslateblue', 'darkslategray', 'darkturquoise', 'darkviolet', 
+        'deeppink', 'deepskyblue', 'dimgray', 'dodgerblue', 'firebrick', 
+        'forestgreen', 'fuchsia', 'goldenrod', 'gray', 'green', 'hotpink', 
+        'indianred', 'indigo', 'maroon', 'mediumblue', 'mediumorchid', 
+        'mediumpurple', 'mediumseagreen', 'mediumslateblue', 'mediumspringgreen', 
+        'mediumturquoise', 'mediumvioletred', 'midnightblue', 'navy', 
+        'olive', 'olivedrab', 'orange', 'orangered', 'orchid', 'peru', 
+        'purple', 'rebeccapurple', 'red', 'rosybrown', 'royalblue', 
+        'saddlebrown', 'seagreen', 'sienna', 'slateblue', 'slategray', 
+        'steelblue', 'teal', 'tomato', 'turquoise', 'violet'
+    ]
 
-    for ax in axs:
+    for ax in axs[:3]:
         ax.set_xlabel("L")
         ax.set_ylabel("A")
         ax.set_zlabel("B")
@@ -329,14 +332,15 @@ if __name__=='__main__':
     line_direction = np.array([1, reg.coef_[0, 0], reg.coef_[1, 0]])
     line_direction = line_direction / np.linalg.norm(line_direction)
 
-    for ax in axs:
+    for ax in axs[:3]:
         ax.plot(L_fit.flatten(), AB_fit[:, 0], AB_fit[:, 1], color='orange', linewidth=2, label='Best Fit Line')
         ax.scatter(bg_lab[0], bg_lab[1], bg_lab[2], color="black", label="BG Lab", marker="*", s=200)
 
 
     distances = compute_line_distance(bg_lab, line_direction, points)
-    d = 20
+    d = 7
     subset = points[distances < d]
+    subset_labels = labels[distances < d]
     complement = points[distances >= d]
 
     axs[0].scatter(subset[:, 0], subset[:, 1], subset[:, 2], color="green", alpha=0.3, zorder=0)
@@ -355,7 +359,7 @@ if __name__=='__main__':
 
     means = gmm.means_
 
-    for ax in axs[:-1]:
+    for ax in axs[:2]:
         ax.scatter(means[:, 0], means[:, 1], means[:, 2], color="cyan", marker="*", s=100, zorder=10)
 
     # Plot subset colored by GMM prediction on axs[2]
@@ -376,7 +380,7 @@ if __name__=='__main__':
     v = np.linspace(0, np.pi, 20)
     min_points = 100
     
-    for k in valid:
+    for nc_idx, k in enumerate(valid):
         if gmm.covariance_type == 'spherical':
             sigma = np.sqrt(gmm.covariances_[k]) * 2  # 2-sigma
             scale = np.array([sigma, sigma, sigma])
@@ -411,16 +415,46 @@ if __name__=='__main__':
         z_final = z_scaled + means[k, 2]
         
         # Plot ellipsoid
-        for ax in axs:
+        for ax in axs[:2]:
             ax.plot_surface(x_final, y_final, z_final, alpha=0.05, color=label_colors[k % len(label_colors)])
+        axs[2].plot_surface(x_final, y_final, z_final, alpha=0.05, color=new_colors[nc_idx])
 
         cluster_points = subset[cluster_labels == k]
         axs[2].scatter(cluster_points[:, 0], cluster_points[:, 1], cluster_points[:, 2], 
-                        color=label_colors[k % len(label_colors)], label=f"Cluster {k}", alpha=0.1)
+                        color=new_colors[nc_idx], label=f"Cluster {k}", alpha=0.1)
         
         axs[2].scatter(means[k, 0], means[k, 1], means[k, 2], color="cyan", marker="*", s=100, zorder=10)
 
     axs[0].set_title("Subset Used for GMM Clustering")
     axs[1].set_title("Original Segmenter Labels")
     axs[2].set_title("GMM Clustering")
+
+    # 1d Projection
+    distances, projections = compute_proj_dist(bg_lab, line_direction, subset)
+    n = 5
+    for t, color in zip(thickness, label_colors):
+        plot_dist = distances[subset_labels == t]
+        plot_proj = projections[subset_labels == t]
+        axs[3].scatter(plot_proj, plot_dist, label=t, color=color)
+    axs[3].set_title("Old Segmenter Generated Labels")
+
+    distances, projections = compute_proj_dist(bg_lab, line_direction, subset)
+    for i, label in enumerate(valid):
+        plot_dist = distances[cluster_labels == label]
+        plot_proj = projections[cluster_labels == label]
+        axs[4].scatter(plot_proj, plot_dist, color=new_colors[i])
+    axs[4].set_title("GMM-Predicted Labels")
+
+    means = means[valid]
+    dists_to_means = np.linalg.norm(means - bg_lab, axis=1)
+    point = means[np.argsort(dists_to_means)[1]]
+    point = np.expand_dims(point, axis=0)
+    dist, proj = compute_proj_dist(bg_lab, line_direction, point)
+    for ax in axs[3:]:
+        ax.scatter(0, 0, marker="*", color='black', s=300)
+        ax.scatter(proj, dist, marker="*", color='cyan', s=300)
+        ax.scatter(proj/2, dist/2, marker="*", color='green', s=300)
+        ax.set_xlabel("Projection onto Line")
+        ax.set_ylabel("Distance from Line")
+
     plt.show()

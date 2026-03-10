@@ -354,7 +354,7 @@ graphene = Material(
     args = [
        [5, 3, 5, 6], # Radius, Blur, Threshold, and Dilate Iterations for M50 and higher
        [2, 1.5, 5, 4], # M20
-       [2, 1.5, 5, 4], # M10
+       [2, 1.5, 5, 3], # M10
        [1, 1, 5, 3] # M5
        ],
   )

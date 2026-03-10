@@ -38,6 +38,11 @@ parser.add_argument(
     action='store_true'
 )
 parser.add_argument(
+    "-s",
+    help="save image to desktop",
+    action='store_true'
+)
+parser.add_argument(
     '-m',
     metavar='mask_num', 
     help='id num of an individual flake',
@@ -45,7 +50,20 @@ parser.add_argument(
     required=False,
     type=int
 )
+parser.add_argument(
+    '-mag',
+    metavar='mag', 
+    help='magnification',
+    default=0,
+    required=False,
+    type=int
+)
 args = parser.parse_args()
+
+if args.mag == 0:
+    mag = get_mag(args.fname)
+else:
+    mag = args.mag
 
 arg_sum = args.w + args.g + args.hb
 if arg_sum != 1:
@@ -93,16 +111,16 @@ g1 = cv2.cvtColor(g1, cv2.COLOR_BGR2RGB)
 # g1 = np.roll(g1, -200, 0)
 
 # if args.w:
-h, w = g1.shape[0]//4, g1.shape[1]//4
-g1 = g1[h:-h, w:-w]
+# h, w = g1.shape[0]//4, g1.shape[1]//4
+# g1 = g1[h:-h, w:-w]
 # else:
-#     grow = 1/2
-#     g1 = cv2.resize(g1, (int(g1.shape[1]*grow), int(g1.shape[0]*grow)))
+# grow = 1/2
+# g1 = cv2.resize(g1, (int(g1.shape[1]*grow), int(g1.shape[0]*grow)))
 
 # Initialize Segmenter
 watch.clock()
 # segmenter = Segmenter(g1, graphene, colors=colors_by_layer, magnification=magnification, min_area=50, focus_disks=[(f, rad), (f2, rad - 10)], k=3)
-segmenter = Segmenter(g1, mat, colors=colors_by_layer, magnification=get_mag(args.fname), min_area=500, k=3, surround_bg=True)
+segmenter = Segmenter(g1, mat, colors=colors_by_layer, magnification=mag, min_area=50, k=3, surround_bg=True)
 lab = segmenter.lab.copy()
 print(segmenter.edge_method.mag)
 # watch.clock()
@@ -118,6 +136,10 @@ segmenter.label_masks()
 # watch.clock()
 result = segmenter.prettify()
 watch.clock()
+
+if args.s:
+    result = (255 * result).astype(np.uint8)
+    cv2.imwrite(f'/Users/mayanksengupta/Desktop/{args.fname}', cv2.cvtColor(result, cv2.COLOR_RGB2BGR))
 
 print(g1.shape)
     
